@@ -4,13 +4,14 @@ import hmac
 import json
 import keyword
 import logging
-import re
 
 import fire
-import lxml.etree
 import requests
 import urllib
+import xmltodict
 
+SDK_VERSION = '0.1'
+USER_AGENT = 'osc_sdk ' + SDK_VERSION
 
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
@@ -20,56 +21,57 @@ MAX_RETRIES = 3
 SERVICES_BUILT_WITH_MEMBERS = {'lbu'}
 SUCCESS_CODES = [200, 201, 202, 203, 204]
 
-logging.basicConfig()
 logger = logging.getLogger('osc_sdk')
 
 
 class OscApiException(Exception):
 
-    def __init__(self, status_code, response, stack=None):
+    def __init__(self, http_response, stack=None):
         super(OscApiException, self).__init__()
-        self.status_code = status_code
+        self.status_code = http_response.status_code
         self.error_code = None
         self.message = None
         self.request_id = None
         self.stack = stack
-        if hasattr(response, 'Errors'):
-            if hasattr(response.Errors, 'Error'):
-                self.error_code = response.Errors.Error.Code
-                self.message = response.Errors.Error.Message
-            elif type(response.Errors) is list:
-                self.error_code = response.Errors[0].error_code
-                if hasattr(response.Errors[0], 'description'):
-                    self.message = response.Errors[0].description
-                elif hasattr(response.Errors[0], 'data'):
-                    self.message = response.Errors[0].data
-        if hasattr(response, 'Error'):
-            self.error_code = response.Error.Code
-            self.message = response.Error.Message
-        if hasattr(response, 'RequestID'):
-            self.request_id = response.RequestID
-        elif hasattr(response, 'RequestId'):
-            self.request_id = response.RequestId
-        elif hasattr(response, 'requestId'):
-            self.request_id = response.requestId
-        if hasattr(response, 'Message'):
-            self.message = response.Message
-        if hasattr(response, 'result') and hasattr(response.result, 'result'):
-            self.error_code = response.result.faultcode
-            self.message = response.result.faultmessage
-        if hasattr(response, '__type'):
-            self.error_code = getattr(response, '__type')
-        if hasattr(response, 'faultcode'):
-            self.error_code = response.faultcode
-            self.message = response.faultstring
-        if hasattr(response, 'error'):
-            if hasattr(response.error, 'message'):
-                self.error_code = response.error.code
-                self.message = response.error.message
+        self.response = http_response.text
+        if hasattr(self.response, 'Errors'):
+            if hasattr(self.response.Errors, 'Error'):
+                self.error_code = self.response.Errors.Error.Code
+                self.message = self.response.Errors.Error.Message
+            elif type(self.response.Errors) is list:
+                self.error_code = self.response.Errors[0].error_code
+                if hasattr(self.response.Errors[0], 'description'):
+                    self.message = self.response.Errors[0].description
+                elif hasattr(self.response.Errors[0], 'data'):
+                    self.message = self.response.Errors[0].data
+        if hasattr(self.response, 'Error'):
+            self.error_code = self.response.Error.Code
+            self.message = self.response.Error.Message
+        if hasattr(self.response, 'RequestID'):
+            self.request_id = self.response.RequestID
+        elif hasattr(self.response, 'RequestId'):
+            self.request_id = self.response.RequestId
+        elif hasattr(self.response, 'requestId'):
+            self.request_id = self.response.requestId
+        if hasattr(self.response, 'Message'):
+            self.message = self.response.Message
+        if (hasattr(self.response, 'result')
+                and hasattr(self.response.result, 'result')):
+            self.error_code = self.response.result.faultcode
+            self.message = self.response.result.faultmessage
+        if hasattr(self.response, '__type'):
+            self.error_code = getattr(self.response, '__type')
+        if hasattr(self.response, 'faultcode'):
+            self.error_code = self.response.faultcode
+            self.message = self.response.faultstring
+        if hasattr(self.response, 'error'):
+            if hasattr(self.response.error, 'message'):
+                self.error_code = self.response.error.code
+                self.message = self.response.error.message
             else:
-                self.message = response.error
-        if isinstance(response, str):
-            self.message = response
+                self.message = self.response.error
+        if isinstance(self.response, str):
+            self.message = self.response
 
     def __str__(self):
         return (
@@ -82,7 +84,36 @@ class OscApiException(Exception):
         return str(self)
 
 
-class OscObjectXml(object):
+class OscObject(object):
+
+    def display(self, tab=""):
+        ret = ""
+        ret += "{}{}:\n".format(tab, self._name)
+        tab = tab.replace("*", " ")
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                pass
+            elif isinstance(value, list):
+                value_list = value
+                ret += "{}|- {}:\n".format(tab, key)
+                for val in value_list:
+                    if isinstance(val, OscObject):
+                        ret += val.display(tab + "|  * ")
+                    else:
+                        if isinstance(val, str):
+                            val = val.encode('utf-8')
+                        ret += "{}|  * {}\n".format(tab, val)
+            elif isinstance(value, OscObject):
+                ret += "{}|- {}:\n".format(tab, key)
+                ret += value.display(tab + "|  ")
+            else:
+                if isinstance(value, str):
+                    value = value.encode('utf-8')
+                ret += "{}|- {}:{}\n".format(tab, key, value)
+        return ret
+
+
+class OscObjectXml(OscObject):
 
     def __init__(self, elem, name=None):
         # name is set when we parse an "item" element
@@ -130,7 +161,7 @@ class OscObjectXml(object):
                         OscObjectXml(child))
 
 
-class OscObjectDict(object):
+class OscObjectDict(OscObject):
 
     def __init__(self, elem, name=None):
         self._name = name
@@ -157,35 +188,6 @@ class OscObjectDict(object):
             else:
                 setattr(self, key.replace('.', '_'), value)
                 logger.debug("  Add %s.%s = %s", self._name, key, value)
-
-
-class OscResponse(object):
-
-    def __init__(self, http_response):
-        self.status_code = http_response.status_code
-        self.text = http_response.text
-
-        self.response = None
-        # hack for icu calls returning '""'
-        if (http_response.text
-                and http_response.text != "''"
-                and http_response.text != '""'):
-            if (http_response.text.startswith("<")
-                    and not http_response.text.startswith("<html")):
-                self.response = OscObjectXml(
-                    lxml.etree.ElementTree.fromstring(
-                        re.sub(' xmlns="[^"]+"',
-                               '',
-                               http_response.text,
-                               count=1)))
-            elif http_response.text.startswith("{"):
-                self.response = OscObjectDict(json.loads(http_response.text))
-            else:
-                self.response = "Unable to parse response: '{}'".format(
-                    http_response.text)
-
-        if self.status_code not in SUCCESS_CODES:
-            raise OscApiException(self.status_code, self.response)
 
 
 class ApiCall(object):
@@ -239,6 +241,9 @@ class ApiCall(object):
             signed_headers,
             signature)
 
+    def get_response(self, request):
+        raise NotImplementedError
+
     def param_to_dict(self, data, prefix=''):
         ret = {}
         if isinstance(data, list):
@@ -262,7 +267,7 @@ class ApiCall(object):
                 return {prefix: ''}
             return {prefix: str(data)}
 
-    def call(self, call, *args, **kwargs):
+    def make_request(self, call, *args, **kwargs):
         host = '.'.join([self.service, self.host])
 
         date = datetime.datetime.utcnow()
@@ -327,15 +332,14 @@ class ApiCall(object):
         headers = {
             'Authorization': authorization_header,
             'x-amz-date': amzdate,
-            'User-agent': 'osc_sdk'
+            'User-agent': USER_AGENT,
         }
         if self.method == 'POST':
             headers['content-type'] = content_type
             headers['x-amz-target'] = amz_target
             request_url = "{}://{}".format(self.protocol, host)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
-        response = OscResponse(
+        self.response = self.get_response(
             requests.request(
                 method=self.method,
                 url=request_url,
@@ -343,7 +347,7 @@ class ApiCall(object):
                 headers=headers,
                 verify=False))
 
-        return response
+        print(json.dumps(self.response, indent=4))
 
 
 class FcuCall(ApiCall):
@@ -352,15 +356,310 @@ class FcuCall(ApiCall):
         super(FcuCall, self).__init__(**kwargs)
         self.service = 'fcu'
 
+    def get_response(self, http_response):
+        if http_response.status_code not in SUCCESS_CODES:
+            raise OscApiException(http_response)
+
+        try:
+            response = xmltodict.parse(http_response.content)
+        except Exception:
+            response = "Unable to parse response: '{}'".format(
+                    http_response.text)
+
+        return response
+
+    def make_request(self, call, *args, **kwargs):
+        host = '.'.join([self.service, self.host])
+
+        date = datetime.datetime.utcnow()
+        amzdate = date.strftime('%Y%m%dT%H%M%SZ')
+        datestamp = date.strftime('%Y%m%d')
+
+        request_parameters = self.param_to_dict(data=kwargs)
+        request_parameters['Action'] = call
+        if 'Version' not in request_parameters:
+            request_parameters['Version'] = self.version
+
+        canonical_uri = '/'
+        algorithm = 'AWS4-HMAC-SHA256'
+        credential_scope = '/'.join([datestamp,
+                                     self.region,
+                                     self.service,
+                                     'aws4_request'])
+
+        if self.method == 'GET':
+            canonical_headers = '\n'.join(['host:' + host,
+                                           'x-amz-date:' + amzdate,
+                                           ''])
+            signed_headers = 'host;x-amz-date'
+            payload_hash = hashlib.sha256('').hexdigest()
+            request_parameters = urllib.parse.urlencode(
+                request_parameters)
+            canonical_request = '\n'.join([
+                self.method, canonical_uri,
+                request_parameters, canonical_headers,
+                signed_headers, payload_hash])
+            request_url = "{}://{}?{}".format(self.protocol, host,
+                                              request_parameters)
+        else:
+            content_type = 'application/x-www-form-urlencoded'
+            amz_target = '{}_{}.{}'.format(
+                self.service,
+                datetime.date.today().strftime("%Y%m%d"),
+                call)
+            request_parameters = urllib.parse.urlencode(
+                request_parameters)
+            canonical_headers = (
+                'content-type:{}\n'
+                'host:{}\n'
+                'x-amz-date:{}\n'
+                'x-amz-target:{}\n'.format(
+                    content_type,
+                    host,
+                    amzdate,
+                    amz_target))
+            signed_headers = 'content-type;host;x-amz-date;x-amz-target'
+
+            payload_hash = hashlib.sha256(
+                request_parameters.encode('utf-8')).hexdigest()
+            canonical_request = '\n'.join([self.method, canonical_uri, '',
+                                           canonical_headers, signed_headers,
+                                           payload_hash])
+
+        authorization_header = self.get_authorization_header(
+            algorithm, amzdate, credential_scope, canonical_request,
+            signed_headers, datestamp)
+
+        headers = {
+            'Authorization': authorization_header,
+            'x-amz-date': amzdate,
+            'User-agent': 'osc_sdk ' + SDK_VERSION
+        }
+        if self.method == 'POST':
+            headers['content-type'] = content_type
+            headers['x-amz-target'] = amz_target
+            request_url = "{}://{}".format(self.protocol, host)
+
+        self.response = self.get_response(
+            requests.request(
+                method=self.method,
+                url=request_url,
+                data=request_parameters,
+                headers=headers,
+                verify=False))
+
+        print(json.dumps(self.response, indent=4))
+
+
+class LbuCall(FcuCall):
+
+    def __init__(self, **kwargs):
+        super(LbuCall, self).__init__(**kwargs)
+        self.service = 'lbu'
+
+
+class EimCall(FcuCall):
+
+    def __init__(self, **kwargs):
+        super(EimCall, self).__init__(**kwargs)
+        self.service = 'eim'
+
+
+class JsonApiCall(ApiCall):
+
+    def make_request(self, call, *args, **kwargs):
+        pass
+
+    def get_response(self, http_response):
+        if http_response.status_code not in SUCCESS_CODES:
+            raise OscApiException(http_response)
+        print(http_response.__dict__)
+
+        return json.loads(http_response.text)
+
+
+class IcuCall(JsonApiCall):
+
+    def __init__(self, **kwargs):
+        super(IcuCall, self).__init__(**kwargs)
+        self.service = 'icu'
+        self.amz_service = "TinaIcuService"
+
+    def param_to_dict(self, data):
+        return data
+
+    def make_request(self, call, *args, **kwargs):
+        auth = kwargs.pop('authentication-method', 'accesskey')
+        if auth not in {'accesskey', 'password'}:
+            raise OscApiException('Bad authentication method {}'.format(
+                auth))
+        if auth == 'password':
+            try:
+                login = kwargs.pop('login')
+                password = kwargs.pop('password')
+            except KeyError:
+                logger.error('Missing login and/or password')
+        host = '.'.join([self.service, self.host])
+
+        date = datetime.datetime.utcnow()
+        amzdate = date.strftime('%Y%m%dT%H%M%SZ')
+        datestamp = date.strftime('%Y%m%d')
+
+        request_parameters = self.param_to_dict(data=kwargs)
+        amz_target = '.'.join([self.amz_service, call])
+        request_parameters['Action'] = call
+        if 'Version' not in request_parameters:
+            request_parameters['Version'] = self.version
+        if auth == 'password':
+            request_parameters['AuthenticationMethod'] = 'password'
+            request_parameters['Login'] = login
+            request_parameters['Password'] = password
+        else:
+            request_parameters['AuthenticationMethod'] = 'accesskey'
+
+        canonical_uri = '/'
+        algorithm = 'AWS4-HMAC-SHA256'
+        credential_scope = '/'.join([datestamp,
+                                     self.region,
+                                     self.service,
+                                     'aws4_request'])
+
+        content_type = 'application/x-amz-json-1.1'
+        json_parameters = json.dumps(request_parameters)
+        canonical_headers = (
+            'host:{}\n'
+            'x-amz-date:{}\n'
+            'x-amz-target:{}\n'.format(
+                host,
+                amzdate,
+                amz_target))
+        signed_headers = 'host;x-amz-date;x-amz-target'
+
+        canonical_request = '\n'.join(
+            ['POST', canonical_uri, '',
+             canonical_headers,
+             signed_headers,
+             hashlib.sha256(
+                 json_parameters.encode('utf-8')).hexdigest()])
+
+        headers = {
+            'content-type': content_type,
+            'x-amz-date': amzdate,
+            'x-amz-target': amz_target,
+            'User-agent': USER_AGENT,
+        }
+        if auth == 'accesskey':
+            headers['Authorization'] = self.get_authorization_header(
+                algorithm, amzdate, credential_scope, canonical_request,
+                signed_headers, datestamp)
+
+        headers['content-length'] = str(len(json_parameters))
+
+        request_url = "{}://{}".format(self.protocol, host)
+
+        self.response = self.get_response(
+            requests.request(
+                method=self.method,
+                url=request_url,
+                data=json_parameters,
+                headers=headers,
+                verify=False))
+
+        print(json.dumps(self.response, indent=4))
+
+
+class DirectLinkCall(JsonApiCall):
+
+    def __init__(self, **kwargs):
+        super(DirectLinkCall, self).__init__(**kwargs)
+        self.service = 'directlink'
+        self.amz_service = "OvertureService"
+
+    def get_response(self, http_response):
+        if http_response.status_code not in SUCCESS_CODES:
+            raise OscApiException(http_response)
+        print(http_response.__dict__)
+
+        res = json.loads(http_response.text)
+        res['requestid'] = http_response.headers['x-amz-requestid']
+        return res
+
+    def make_request(self, call, *args, **kwargs):
+        host = '.'.join([self.service, self.host])
+
+        date = datetime.datetime.utcnow()
+        amzdate = date.strftime('%Y%m%dT%H%M%SZ')
+        datestamp = date.strftime('%Y%m%d')
+
+        request_parameters = kwargs
+        amz_target = '.'.join([self.amz_service, call])
+
+        canonical_uri = '/'
+        algorithm = 'AWS4-HMAC-SHA256'
+        credential_scope = '/'.join([datestamp,
+                                     self.region,
+                                     self.service,
+                                     'aws4_request'])
+
+        content_type = 'application/x-amz-json-1.1'
+        json_parameters = json.dumps(request_parameters)
+        canonical_headers = (
+            'host:{}\n'
+            'x-amz-date:{}\n'
+            'x-amz-target:{}\n'.format(
+                host,
+                amzdate,
+                amz_target))
+        signed_headers = 'host;x-amz-date;x-amz-target'
+
+        payload_hash = hashlib.sha256(
+            json_parameters.encode('utf-8')).hexdigest()
+        canonical_request = '\n'.join(['POST', canonical_uri, '',
+                                       canonical_headers,
+                                       signed_headers, payload_hash])
+
+        headers = {
+            'content-type': content_type,
+            'x-amz-date': amzdate,
+            'x-amz-target': amz_target,
+            'User-agent': USER_AGENT,
+            'Authorization': self.get_authorization_header(
+                algorithm, amzdate, credential_scope, canonical_request,
+                signed_headers, datestamp),
+            'content-length': str(len(json_parameters)),
+        }
+
+        request_url = "{}://{}".format(self.protocol, host)
+        self.response = self.get_response(
+            requests.request(
+                method=self.method,
+                url=request_url,
+                data=json_parameters,
+                headers=headers,
+                verify=False))
+
+        print(json.dumps(self.response, indent=4))
+
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     conf = {
-        'profile': {'ak': 'HGHGHGHGHGHG',
-                    'sk': 'HGFHGISFDINODFN'},
-        'https': False,
-        'host': 'fcu.dk-west-1.outscale.local',
+        'host': 'dk-west-1.outscale.local',
+        'https': True,
+        'max_retries': 3,
+        'method': 'POST',
+        'profile': {'ak': 'SR50409NMMKDKW4MWNLE',
+                    'sk': 'H9uBXvbSPuRATQg393jk00BifJ25O6WJ3KL4Sraj'},
+        'region_name': 'dk-west-1',
+        'version': DEFAULT_VERSION,
     }
-    fire.Fire(FcuCall(**conf).call)
+    fire.Fire({
+        'fcu': FcuCall(**conf).make_request,
+        'lbu': LbuCall(**conf).make_request,
+        'eim': EimCall(**conf).make_request,
+        'directlink': DirectLinkCall(**conf).make_request,
+        'icu': IcuCall(**conf).make_request,
+    })
 
 
 if __name__ == '__main__':
