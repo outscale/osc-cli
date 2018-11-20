@@ -4,10 +4,10 @@ import hmac
 import json
 import logging
 import pathlib
+import urllib
 
 import fire
 import requests
-import urllib
 import xmltodict
 
 SDK_VERSION = '0.1'
@@ -459,7 +459,7 @@ class IcuCall(JsonApiCall):
         return {
             'Action': call,
             'Version': self.version,
-          # **request_parameters,
+            **request_parameters,
         }
 
 
@@ -478,17 +478,6 @@ class DirectLinkCall(JsonApiCall):
 
 def get_conf(profile):
     conf_path = pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE
-    conf = {}
-    conf['default'] = {
-        'access_key': 'SR50409NMMKDKW4MWNLE',
-        'host': 'outscale.local',
-        'https': True,
-        'method': 'POST',
-        'region_name': 'dk-west-1',
-        'secret_key': 'H9uBXvbSPuRATQg393jk00BifJ25O6WJ3KL4Sraj',
-        'version': DEFAULT_VERSION,
-    }
-    conf_path.write_text(json.dumps(conf))
     if not conf_path.exists():
         raise RuntimeError('No configuration file found in home folder')
 
