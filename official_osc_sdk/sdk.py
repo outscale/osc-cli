@@ -15,6 +15,7 @@ USER_AGENT = 'osc_sdk ' + SDK_VERSION
 CONFIGURATION_FOLDER = '.osc_sdk'
 CONFIGURATION_FILE = 'config.conf'
 
+SSL_VERIFY = True
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
 DEFAULT_REGION = 'eu-west-2'
@@ -88,8 +89,9 @@ class OscApiException(Exception):
 
 
 class ApiCall(object):
-    service = None
-
+    SERVICE = None
+    CONTENT_TYPE = 'application/x-www-form-urlencoded'
+    
     def __init__(self, **kwargs):
         self.method = kwargs.pop('method', DEFAULT_METHOD)
         self.access_key = kwargs.pop('access_key')
@@ -97,7 +99,7 @@ class ApiCall(object):
         self.version = kwargs.pop('version', DEFAULT_VERSION)
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
-        self.host = '.'.join([self.service, self.region, kwargs.pop('host')])
+        self.host = '.'.join([self.SERVICE, self.region, kwargs.pop('host')])
 
         date = datetime.datetime.utcnow()
         self.amz_date = date.strftime('%Y%m%dT%H%M%SZ')
@@ -132,7 +134,7 @@ class ApiCall(object):
             credential_scope,
             hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()])
         signing_key = self.get_signature_key(self.secret_key, timestamp,
-                                             self.region, self.service)
+                                             self.region, self.SERVICE)
         signature = hmac.new(signing_key, (string_to_sign).encode('utf-8'),
                              hashlib.sha256).hexdigest()
         return '{} Credential={}/{}, SignedHeaders={}, Signature={}'.format(
@@ -178,7 +180,7 @@ class ApiCall(object):
 
         credential_scope = '/'.join([self.datestamp,
                                      self.region,
-                                     self.service,
+                                     self.SERVICE,
                                      'aws4_request'])
 
         if self.method == 'GET':
@@ -196,9 +198,8 @@ class ApiCall(object):
             request_url = "{}://{}?{}".format(self.protocol, self.host,
                                               request_parameters)
         else:
-            content_type = 'application/x-www-form-urlencoded'
             amz_target = '{}_{}.{}'.format(
-                self.service,
+                self.SERVICE,
                 datetime.date.today().strftime("%Y%m%d"),
                 call)
             request_parameters = urllib.parse.urlencode(
@@ -208,7 +209,7 @@ class ApiCall(object):
                 'host:{}\n'
                 'x-amz-date:{}\n'
                 'x-amz-target:{}\n'.format(
-                    content_type,
+                    self.CONTENT_TYPE,
                     self.host,
                     self.amz_date,
                     amz_target))
@@ -230,7 +231,7 @@ class ApiCall(object):
             'User-agent': USER_AGENT,
         }
         if self.method == 'POST':
-            headers['content-type'] = content_type
+            headers['content-type'] = self.CONTENT_TYPE
             headers['x-amz-target'] = amz_target
             request_url = "{}://{}".format(self.protocol, self.host)
 
@@ -240,13 +241,13 @@ class ApiCall(object):
                 url=request_url,
                 data=request_parameters,
                 headers=headers,
-                verify=False))
+                verify=SSL_VERIFY))
 
         print(json.dumps(self.response, indent=4))
 
 
 class FcuCall(ApiCall):
-    service = 'fcu'
+    SERVICE = 'fcu'
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
@@ -260,87 +261,9 @@ class FcuCall(ApiCall):
 
         return response
 
-    def make_request(self, call, *args, **kwargs):
-        date = datetime.datetime.utcnow()
-        self.amz_date = date.strftime('%Y%m%dT%H%M%SZ')
-        self.datestamp = date.strftime('%Y%m%d')
-
-        request_parameters = self.get_parameters(data=kwargs)
-        request_parameters['Action'] = call
-        if 'Version' not in request_parameters:
-            request_parameters['Version'] = self.version
-
-        credential_scope = '/'.join([self.datestamp,
-                                     self.region,
-                                     self.service,
-                                     'aws4_request'])
-
-        if self.method == 'GET':
-            canonical_headers = '\n'.join(['host:' + self.host,
-                                           'x-amz-date:' + self.amz_date,
-                                           ''])
-            signed_headers = 'host;x-amz-date'
-            payload_hash = hashlib.sha256('').hexdigest()
-            request_parameters = urllib.parse.urlencode(
-                request_parameters)
-            canonical_request = '\n'.join([
-                self.method, CANONICAL_URI,
-                request_parameters, canonical_headers,
-                signed_headers, payload_hash])
-            request_url = "{}://{}?{}".format(self.protocol, self.host,
-                                              request_parameters)
-        else:
-            content_type = 'application/x-www-form-urlencoded'
-            amz_target = '{}_{}.{}'.format(
-                self.service,
-                datetime.date.today().strftime("%Y%m%d"),
-                call)
-            request_parameters = urllib.parse.urlencode(
-                request_parameters)
-            canonical_headers = (
-                'content-type:{}\n'
-                'host:{}\n'
-                'x-amz-date:{}\n'
-                'x-amz-target:{}\n'.format(
-                    content_type,
-                    self.host,
-                    self.amz_date,
-                    amz_target))
-            signed_headers = 'content-type;host;x-amz-date;x-amz-target'
-
-            payload_hash = hashlib.sha256(
-                request_parameters.encode('utf-8')).hexdigest()
-            canonical_request = '\n'.join([self.method, CANONICAL_URI, '',
-                                           canonical_headers, signed_headers,
-                                           payload_hash])
-
-        authorization_header = self.get_authorization_header(
-            self.amz_date, credential_scope, canonical_request,
-            signed_headers, self.datestamp)
-
-        headers = {
-            'Authorization': authorization_header,
-            'x-amz-date': self.amz_date,
-            'User-agent': 'osc_sdk ' + SDK_VERSION
-        }
-        if self.method == 'POST':
-            headers['content-type'] = content_type
-            headers['x-amz-target'] = amz_target
-            request_url = "{}://{}".format(self.protocol, self.host)
-
-        self.response = self.get_response(
-            requests.request(
-                method=self.method,
-                url=request_url,
-                data=request_parameters,
-                headers=headers,
-                verify=False))
-
-        print(json.dumps(self.response, indent=4))
-
 
 class LbuCall(FcuCall):
-    service = 'lbu'
+    SERVICE = 'lbu'
 
     def get_parameters(self, data, prefix=''):
         ret = {}
@@ -365,11 +288,11 @@ class LbuCall(FcuCall):
 
 
 class EimCall(FcuCall):
-    service = 'eim'
+    SERVICE = 'eim'
 
 
 class JsonApiCall(ApiCall):
-    content_type = 'application/x-amz-json-1.1'
+    CONTENT_TYPE = 'application/x-amz-json-1.1'
 
     def get_parameters(self, data, call):
         return data
@@ -388,7 +311,7 @@ class JsonApiCall(ApiCall):
         signed_headers = 'host;x-amz-date;x-amz-target'
         credential_scope = '/'.join([self.datestamp,
                                      self.region,
-                                     self.service,
+                                     self.SERVICE,
                                      'aws4_request'])
 
         amz_target = '.'.join([self.amz_service, call])
@@ -408,7 +331,7 @@ class JsonApiCall(ApiCall):
                  json_parameters.encode('utf-8')).hexdigest()])
 
         headers = {
-            'content-type': self.content_type,
+            'content-type': self.CONTENT_TYPE,
             'x-amz-date': self.amz_date,
             'x-amz-target': amz_target,
             'User-agent': USER_AGENT,
@@ -428,13 +351,13 @@ class JsonApiCall(ApiCall):
                 url=request_url,
                 data=json_parameters,
                 headers=headers,
-                verify=False))
+                verify=SSL_VERIFY))
 
         print(json.dumps(self.response, indent=4))
 
 
 class IcuCall(JsonApiCall):
-    service = 'icu'
+    SERVICE = 'icu'
     amz_service = "TinaIcuService"
 
     def get_parameters(self, request_parameters, call):
@@ -464,7 +387,7 @@ class IcuCall(JsonApiCall):
 
 
 class DirectLinkCall(JsonApiCall):
-    service = 'directlink'
+    SERVICE = 'directlink'
     amz_service = "OvertureService"
 
     def get_response(self, http_response):
