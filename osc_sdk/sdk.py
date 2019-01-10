@@ -13,7 +13,7 @@ import xmltodict
 SDK_VERSION = '0.1'
 USER_AGENT = 'osc_sdk ' + SDK_VERSION
 CONFIGURATION_FOLDER = '.osc_sdk'
-CONFIGURATION_FILE = 'config.conf'
+CONFIGURATION_FILE = 'config.json'
 
 SSL_VERIFY = True
 DEFAULT_METHOD = 'POST'
@@ -361,7 +361,7 @@ class IcuCall(JsonApiCall):
     amz_service = "TinaIcuService"
 
     def get_parameters(self, request_parameters, call):
-        auth = request_parameters.pop('authentication-method', 'accesskey')
+        auth = request_parameters.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
             raise RuntimeError('Bad authentication method {}'.format(
                 auth))
