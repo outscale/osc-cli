@@ -13,7 +13,7 @@ import xmltodict
 SDK_VERSION = '0.1'
 USER_AGENT = 'osc_sdk ' + SDK_VERSION
 CONFIGURATION_FOLDER = '.osc_sdk'
-CONFIGURATION_FILE = 'config.conf'
+CONFIGURATION_FILE = 'config.json'
 
 SSL_VERIFY = True
 DEFAULT_METHOD = 'POST'
