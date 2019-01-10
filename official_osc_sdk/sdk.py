@@ -361,7 +361,7 @@ class IcuCall(JsonApiCall):
     amz_service = "TinaIcuService"
 
     def get_parameters(self, request_parameters, call):
-        auth = request_parameters.pop('authentication-method', 'accesskey')
+        auth = request_parameters.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
             raise RuntimeError('Bad authentication method {}'.format(
                 auth))
