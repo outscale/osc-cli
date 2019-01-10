@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 VERSION = '2.4.38.0'
 
 setup(
-    name="official-osc-sdk",
+    name="osc-sdk",
     version='0.1',
     packages=find_packages(),
     author='Outscale SAS',
@@ -13,7 +13,7 @@ setup(
     url="http://www.outscale.com/",
     entry_points={
         'console_scripts': [
-            'osc-cli = official_osc_sdk.sdk:main',
+            'osc-cli = osc_sdk.sdk:main',
         ]
     },
     install_requires=[
