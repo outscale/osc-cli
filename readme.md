@@ -31,7 +31,7 @@ pip install -e .
 
 ## Configure osc-cli
 
-The CLI requires a configuration file in `~/.osc_sdk/config.conf` The content must be a JSON whose contents look like this:
+The CLI requires a configuration file in `~/.osc_sdk/config.json` The content must be a JSON whose contents look like this:
 ```json
 {"default":
     {"access_key": "MYACCESSKEY",
@@ -65,7 +65,7 @@ Few examples:
 
 ## Authentication
 
-You API crendentials are composed of an Access Key and a Secret Key located in `.osc_sdk/config.conf`.
+You API crendentials are composed of an Access Key and a Secret Key located in `.osc_sdk/config.json`.
 You can list you access keys using your user and password:
 ```bash
 osc-cli icu ListAccessKeys --authentication-method=password --login youremail@company.com --password=Y0URpAssOrd
