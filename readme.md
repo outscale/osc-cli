@@ -70,3 +70,7 @@ You can list you access keys using your user and password:
 ```bash
 osc-cli icu ListAccessKeys --authentication-method=password --login youremail@company.com --password=Y0URpAssOrd
 ```
+## Contributing
+OSC-CLI is an **open source software** licensed under **BSD-3-Clause.**
+
+Patches and discussions are welcome about bugs you've found or features you think are missing. If you would like to help making **osc-cli** better, take a look to [CONTRIBUTING.md](https://github.com/outscale/osc-cli/blob/master/CONTRIBUTING.md) file.
