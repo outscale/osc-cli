@@ -20,7 +20,7 @@ pip install official_osc_sdk-0.1-py3-none-any.whl
 It is a good practice to create a [dedicated virtualenv](https://virtualenv.pypa.io/en/latest/) first. Even if it usually won't harm to install Python libraries directly on the system, better to contain dependencies in a virtual environment.
 
 ```bash
-virtualenv -p python3.7 .venv
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 
