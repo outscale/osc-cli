@@ -300,7 +300,6 @@ class JsonApiCall(ApiCall):
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
-        print(http_response.__dict__)
 
         return json.loads(http_response.text)
 
