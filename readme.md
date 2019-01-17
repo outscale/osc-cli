@@ -61,7 +61,23 @@ with
 * PROFILE the profile you want to connect to (optional)
 * CALL_PARAMS [call arguments](http://docs.outscale.com) which are case-sensitive (optional)
 
-Few examples:
+Here is an example of a simple volume creation:
+```bash
+osc-cli fcu CreateVolume --AvailabilityZone eu-west-2a --Size 10
+{
+    "CreateVolumeResponse": {
+        "@xmlns": "http://ec2.amazonaws.com/doc/2014-06-15/",
+        "requestId": "508f428a-9fd8-4a49-9fe6-d0bf311de3b4",
+        "volumeId": "vol-6a2aa442",
+        "size": "10",
+        "snapshotId": null,
+        "availabilityZone": "eu-west-2a",
+        "status": "creating",
+        "createTime": "2019-01-17T12:53:57.836Z",
+        "volumeType": "standard"
+    }
+}
+```
 
 ## Authentication
 
