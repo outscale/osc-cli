@@ -426,7 +426,7 @@ def api_connect(service, call, profile='default', *args, **kwargs):
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.ERROR)
     fire.Fire(api_connect)
 
 
