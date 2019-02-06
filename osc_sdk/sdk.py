@@ -91,7 +91,7 @@ class OscApiException(Exception):
 class ApiCall(object):
     SERVICE = None
     CONTENT_TYPE = 'application/x-www-form-urlencoded'
-    
+
     def __init__(self, **kwargs):
         self.method = kwargs.pop('method', DEFAULT_METHOD)
         self.access_key = kwargs.pop('access_key')
