@@ -188,7 +188,7 @@ class ApiCall(object):
                                            'x-amz-date:' + self.amz_date,
                                            ''])
             signed_headers = 'host;x-amz-date'
-            payload_hash = hashlib.sha256('').hexdigest()
+            payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
             request_parameters = urllib.parse.urlencode(
                 request_parameters)
             canonical_request = '\n'.join([
@@ -197,6 +197,7 @@ class ApiCall(object):
                 signed_headers, payload_hash])
             request_url = "{}://{}?{}".format(self.protocol, self.host,
                                               request_parameters)
+            request_parameters = None
         else:
             amz_target = '{}_{}.{}'.format(
                 self.SERVICE,
