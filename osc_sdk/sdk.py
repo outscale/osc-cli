@@ -357,7 +357,7 @@ class JsonApiCall(ApiCall):
 
 class IcuCall(JsonApiCall):
     SERVICE = 'icu'
-    amz_service = "TinaIcuService"
+    amz_service = 'TinaIcuService'
 
     def get_parameters(self, request_parameters, call):
         auth = request_parameters.pop('authentication_method', 'accesskey')
@@ -387,7 +387,7 @@ class IcuCall(JsonApiCall):
 
 class DirectLinkCall(JsonApiCall):
     SERVICE = 'directlink'
-    amz_service = "OvertureService"
+    amz_service = 'OvertureService'
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
@@ -396,6 +396,11 @@ class DirectLinkCall(JsonApiCall):
         res = json.loads(http_response.text)
         res['requestid'] = http_response.headers['x-amz-requestid']
         return res
+
+
+class OKMSCall(JsonApiCall):
+    SERVICE = 'kms'
+    amz_service = 'TrentService'
 
 
 def get_conf(profile):
@@ -413,11 +418,12 @@ def get_conf(profile):
 
 def api_connect(service, call, profile='default', *args, **kwargs):
     calls = {
-        'fcu': FcuCall,
-        'lbu': LbuCall,
-        'eim': EimCall,
-        'icu': IcuCall,
         'directlink': DirectLinkCall,
+        'eim': EimCall,
+        'fcu': FcuCall,
+        'icu': IcuCall,
+        'lbu': LbuCall,
+        'okms': OKMSCall,
     }
     conf = get_conf(profile)
     return calls[service](
