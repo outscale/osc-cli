@@ -1,11 +1,9 @@
 # -*- coding:utf-8 -*-
 from setuptools import find_packages, setup
 
-VERSION = '2.4.38.0'
-
 setup(
     name="osc-sdk",
-    version='0.1',
+    version='1.1',
     packages=find_packages(),
     author='Outscale SAS',
     author_email='contact@outscale.com',
