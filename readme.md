@@ -79,6 +79,17 @@ osc-cli fcu CreateVolume --AvailabilityZone eu-west-2a --Size 10
 }
 ```
 
+Be careful with your quotes ! If you want to pass the string `"12345678"` rather than the integer `12345678` you'll need to quote your quotes:
+```bash
+$ osc-cli icu CreateAccount --Email "example@email.com" 
+			    --FirstName "Osc" 
+			    --LastName "Cli" 
+			    --Password "12345toto" 
+			    --ZipCode '"92000"' 
+			    --Country "France"
+			    --CustomerId '"12345678"'
+```
+
 ## Authentication
 
 You API crendentials are composed of an Access Key and a Secret Key located in `.osc_sdk/config.json`.
