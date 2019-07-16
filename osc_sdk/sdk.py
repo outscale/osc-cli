@@ -244,8 +244,6 @@ class ApiCall(object):
                 headers=headers,
                 verify=SSL_VERIFY))
 
-        print(json.dumps(self.response, indent=4))
-
 
 class FcuCall(ApiCall):
     SERVICE = 'fcu'
@@ -353,8 +351,6 @@ class JsonApiCall(ApiCall):
                 headers=headers,
                 verify=SSL_VERIFY))
 
-        print(json.dumps(self.response, indent=4))
-
 
 class IcuCall(JsonApiCall):
     SERVICE = 'icu'
@@ -427,10 +423,10 @@ def api_connect(service, call, profile='default', *args, **kwargs):
         'okms': OKMSCall,
     }
     conf = get_conf(profile)
-    return calls[service](
-        **conf).make_request(
-            call, *args, **kwargs)
-
+    handler = calls[service](**conf)
+    handler.make_request(call, *args, **kwargs)
+    if handler.response:
+        print(json.dumps(handler.response, indent=4))
 
 def main():
     logging.basicConfig(level=logging.ERROR)
