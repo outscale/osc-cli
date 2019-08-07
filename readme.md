@@ -12,7 +12,7 @@ You will need [Python 3.5+](https://www.python.org/) or later. Earlier versions 
 
 You can get the .whl file from releases and install it through:
 ```
-pip install osc_sdk-1.1-py3-none-any.whl
+pip3 install osc_sdk-1.1-py3-none-any.whl
 ```
 
 ### Installing from sources
