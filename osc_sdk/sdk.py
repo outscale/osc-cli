@@ -100,6 +100,7 @@ class ApiCall(object):
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
         self.host = '.'.join([self.SERVICE, self.region, kwargs.pop('host')])
+        self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
 
         date = datetime.datetime.utcnow()
         self.amz_date = date.strftime('%Y%m%dT%H%M%SZ')
@@ -242,7 +243,7 @@ class ApiCall(object):
                 url=request_url,
                 data=request_parameters,
                 headers=headers,
-                verify=SSL_VERIFY))
+                verify=self.ssl_verify))
 
 
 class FcuCall(ApiCall):
@@ -349,7 +350,7 @@ class JsonApiCall(ApiCall):
                 url=request_url,
                 data=json_parameters,
                 headers=headers,
-                verify=SSL_VERIFY))
+                verify=self.ssl_verify))
 
 
 class IcuCall(JsonApiCall):
