@@ -29,7 +29,6 @@ logger = logging.getLogger('osc_sdk')
 
 
 class OscApiException(Exception):
-
     def __init__(self, http_response, stack=None):
         super(OscApiException, self).__init__()
         self.status_code = http_response.status_code
@@ -59,8 +58,7 @@ class OscApiException(Exception):
             self.request_id = self.response.requestId
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
-        if (hasattr(self.response, 'result')
-                and hasattr(self.response.result, 'result')):
+        if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
             self.error_code = self.response.result.faultcode
             self.message = self.response.result.faultmessage
         if hasattr(self.response, '__type'):
@@ -79,10 +77,15 @@ class OscApiException(Exception):
 
     def __str__(self):
         return (
-            'Error --> status = ' + str(self.status_code)
-            + ', code = ' + str(self.error_code)
-            + ', Reason = ' + str(self.message)
-            + ', request_id = ' + str(self.request_id))
+            'Error --> status = '
+            + str(self.status_code)
+            + ', code = '
+            + str(self.error_code)
+            + ', Reason = '
+            + str(self.message)
+            + ', request_id = '
+            + str(self.request_id)
+        )
 
     def get_error_message(self):
         return str(self)
@@ -114,7 +117,8 @@ class ApiCall(object):
     def method(self, method):
         if method not in {'GET', 'POST'}:
             raise Exception(
-                'Wrong method {}: only GET or POST supported.'.format(method))
+                'Wrong method {}: only GET or POST supported.'.format(method)
+            )
         self._method = method
 
     def sign(self, key, msg):
@@ -126,24 +130,26 @@ class ApiCall(object):
         key_service = self.sign(key_region, service_name)
         return self.sign(key_service, 'aws4_request')
 
-    def get_authorization_header(self, amz_date,
-                                 credential_scope, canonical_request,
-                                 signed_headers, timestamp):
-        string_to_sign = '\n'.join([
-            SIG_ALGORITHM,
-            self.amz_date,
-            credential_scope,
-            hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()])
-        signing_key = self.get_signature_key(self.secret_key, timestamp,
-                                             self.region, self.SERVICE)
-        signature = hmac.new(signing_key, (string_to_sign).encode('utf-8'),
-                             hashlib.sha256).hexdigest()
+    def get_authorization_header(
+        self, amz_date, credential_scope, canonical_request, signed_headers, timestamp
+    ):
+        string_to_sign = '\n'.join(
+            [
+                SIG_ALGORITHM,
+                self.amz_date,
+                credential_scope,
+                hashlib.sha256(canonical_request.encode('utf-8')).hexdigest(),
+            ]
+        )
+        signing_key = self.get_signature_key(
+            self.secret_key, timestamp, self.region, self.SERVICE
+        )
+        signature = hmac.new(
+            signing_key, (string_to_sign).encode('utf-8'), hashlib.sha256
+        ).hexdigest()
         return '{} Credential={}/{}, SignedHeaders={}, Signature={}'.format(
-            SIG_ALGORITHM,
-            self.access_key,
-            credential_scope,
-            signed_headers,
-            signature)
+            SIG_ALGORITHM, self.access_key, credential_scope, signed_headers, signature
+        )
 
     def get_response(self, request):
         raise NotImplementedError
@@ -155,8 +161,7 @@ class ApiCall(object):
                 prefix += '.'
             i = 1
             for value in data:
-                ret.update(self.get_parameters(value,
-                                               prefix + str(i)))
+                ret.update(self.get_parameters(value, prefix + str(i)))
             return ret
         if isinstance(data, dict):
             if prefix:
@@ -179,53 +184,67 @@ class ApiCall(object):
         if 'Version' not in request_parameters:
             request_parameters['Version'] = self.version
 
-        credential_scope = '/'.join([self.datestamp,
-                                     self.region,
-                                     self.SERVICE,
-                                     'aws4_request'])
+        credential_scope = '/'.join(
+            [self.datestamp, self.region, self.SERVICE, 'aws4_request']
+        )
 
         if self.method == 'GET':
-            canonical_headers = '\n'.join(['host:' + self.host,
-                                           'x-amz-date:' + self.amz_date,
-                                           ''])
+            canonical_headers = '\n'.join(
+                ['host:' + self.host, 'x-amz-date:' + self.amz_date, '']
+            )
             signed_headers = 'host;x-amz-date'
             payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
-            request_parameters = urllib.parse.urlencode(
-                request_parameters)
-            canonical_request = '\n'.join([
-                self.method, CANONICAL_URI,
-                request_parameters, canonical_headers,
-                signed_headers, payload_hash])
-            request_url = "{}://{}?{}".format(self.protocol, self.host,
-                                              request_parameters)
+            request_parameters = urllib.parse.urlencode(request_parameters)
+            canonical_request = '\n'.join(
+                [
+                    self.method,
+                    CANONICAL_URI,
+                    request_parameters,
+                    canonical_headers,
+                    signed_headers,
+                    payload_hash,
+                ]
+            )
+            request_url = "{}://{}?{}".format(
+                self.protocol, self.host, request_parameters
+            )
             request_parameters = None
         else:
             amz_target = '{}_{}.{}'.format(
-                self.SERVICE,
-                datetime.date.today().strftime("%Y%m%d"),
-                call)
-            request_parameters = urllib.parse.urlencode(
-                request_parameters)
+                self.SERVICE, datetime.date.today().strftime("%Y%m%d"), call
+            )
+            request_parameters = urllib.parse.urlencode(request_parameters)
             canonical_headers = (
                 'content-type:{}\n'
                 'host:{}\n'
                 'x-amz-date:{}\n'
                 'x-amz-target:{}\n'.format(
-                    self.CONTENT_TYPE,
-                    self.host,
-                    self.amz_date,
-                    amz_target))
+                    self.CONTENT_TYPE, self.host, self.amz_date, amz_target
+                )
+            )
             signed_headers = 'content-type;host;x-amz-date;x-amz-target'
 
             payload_hash = hashlib.sha256(
-                request_parameters.encode('utf-8')).hexdigest()
-            canonical_request = '\n'.join([self.method, CANONICAL_URI, '',
-                                           canonical_headers, signed_headers,
-                                           payload_hash])
+                request_parameters.encode('utf-8')
+            ).hexdigest()
+            canonical_request = '\n'.join(
+                [
+                    self.method,
+                    CANONICAL_URI,
+                    '',
+                    canonical_headers,
+                    signed_headers,
+                    payload_hash,
+                ]
+            )
 
         authorization_header = self.get_authorization_header(
-            self.amz_date, credential_scope, canonical_request,
-            signed_headers, self.datestamp)
+            self.amz_date,
+            credential_scope,
+            canonical_request,
+            signed_headers,
+            self.datestamp,
+        )
 
         headers = {
             'Authorization': authorization_header,
@@ -243,7 +262,9 @@ class ApiCall(object):
                 url=request_url,
                 data=request_parameters,
                 headers=headers,
-                verify=self.ssl_verify))
+                verify=self.ssl_verify,
+            )
+        )
 
 
 class FcuCall(ApiCall):
@@ -256,8 +277,7 @@ class FcuCall(ApiCall):
         try:
             response = xmltodict.parse(http_response.content)
         except Exception:
-            response = "Unable to parse response: '{}'".format(
-                    http_response.text)
+            response = "Unable to parse response: '{}'".format(http_response.text)
 
         return response
 
@@ -272,8 +292,7 @@ class LbuCall(FcuCall):
                 prefix += '.member.'
             i = 1
             for value in data:
-                ret.update(self.get_parameters(value,
-                                               prefix + str(i)))
+                ret.update(self.get_parameters(value, prefix + str(i)))
             return ret
         if isinstance(data, dict):
             if prefix:
@@ -308,26 +327,27 @@ class JsonApiCall(ApiCall):
         json_parameters = json.dumps(request_parameters)
 
         signed_headers = 'host;x-amz-date;x-amz-target'
-        credential_scope = '/'.join([self.datestamp,
-                                     self.region,
-                                     self.SERVICE,
-                                     'aws4_request'])
+        credential_scope = '/'.join(
+            [self.datestamp, self.region, self.SERVICE, 'aws4_request']
+        )
 
         amz_target = '.'.join([self.amz_service, call])
         canonical_headers = (
             'host:{}\n'
             'x-amz-date:{}\n'
-            'x-amz-target:{}\n'.format(
-                self.host,
-                self.amz_date,
-                amz_target))
+            'x-amz-target:{}\n'.format(self.host, self.amz_date, amz_target)
+        )
 
         canonical_request = '\n'.join(
-            ['POST', CANONICAL_URI, '',
-             canonical_headers,
-             signed_headers,
-             hashlib.sha256(
-                 json_parameters.encode('utf-8')).hexdigest()])
+            [
+                'POST',
+                CANONICAL_URI,
+                '',
+                canonical_headers,
+                signed_headers,
+                hashlib.sha256(json_parameters.encode('utf-8')).hexdigest(),
+            ]
+        )
 
         headers = {
             'content-type': self.CONTENT_TYPE,
@@ -336,11 +356,17 @@ class JsonApiCall(ApiCall):
             'User-agent': USER_AGENT,
             'content-length': str(len(json_parameters)),
         }
-        if (not request_parameters.get('AuthenticationMethod')
-                or request_parameters['AuthenticationMethod'] == 'accesskey'):
+        if (
+            not request_parameters.get('AuthenticationMethod')
+            or request_parameters['AuthenticationMethod'] == 'accesskey'
+        ):
             headers['Authorization'] = self.get_authorization_header(
-                self.amz_date, credential_scope, canonical_request,
-                signed_headers, self.datestamp)
+                self.amz_date,
+                credential_scope,
+                canonical_request,
+                signed_headers,
+                self.datestamp,
+            )
 
         request_url = "{}://{}".format(self.protocol, self.host)
 
@@ -350,7 +376,9 @@ class JsonApiCall(ApiCall):
                 url=request_url,
                 data=json_parameters,
                 headers=headers,
-                verify=self.ssl_verify))
+                verify=self.ssl_verify,
+            )
+        )
 
 
 class IcuCall(JsonApiCall):
@@ -360,27 +388,23 @@ class IcuCall(JsonApiCall):
     def get_parameters(self, request_parameters, call):
         auth = request_parameters.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
-            raise RuntimeError('Bad authentication method {}'.format(
-                auth))
+            raise RuntimeError('Bad authentication method {}'.format(auth))
         if auth == 'password':
             try:
-                request_parameters.update({
-                    'AuthenticationMethod': 'password',
-                    'Login': request_parameters.pop('login'),
-                    'Password': request_parameters.pop('password'),
-                })
+                request_parameters.update(
+                    {
+                        'AuthenticationMethod': 'password',
+                        'Login': request_parameters.pop('login'),
+                        'Password': request_parameters.pop('password'),
+                    }
+                )
             except KeyError:
                 raise RuntimeError(
-                    'Missing login and/or password, yet password authentification has been required')
+                    'Missing login and/or password, yet password authentification has been required'
+                )
         else:
-            request_parameters.update({
-                'AuthenticationMethod': 'accesskey',
-            })
-        return {
-            'Action': call,
-            'Version': self.version,
-            **request_parameters,
-        }
+            request_parameters.update({'AuthenticationMethod': 'accesskey'})
+        return {'Action': call, 'Version': self.version, **request_parameters}
 
 
 class DirectLinkCall(JsonApiCall):
@@ -410,8 +434,7 @@ def get_conf(profile):
     try:
         return conf[profile]
     except KeyError:
-        raise RuntimeError('Profile {} not found in configuration file'.format(
-            profile))
+        raise RuntimeError('Profile {} not found in configuration file'.format(profile))
 
 
 def api_connect(service, call, profile='default', *args, **kwargs):
@@ -428,6 +451,7 @@ def api_connect(service, call, profile='default', *args, **kwargs):
     handler.make_request(call, *args, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
+
 
 def main():
     logging.basicConfig(level=logging.ERROR)
