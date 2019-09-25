@@ -1,0 +1,8 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.swp
+
+# Distribution / packaging
+osc_sdk.egg-info/
+*.egg-info/
+*.egg
