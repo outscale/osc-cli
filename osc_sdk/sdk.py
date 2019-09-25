@@ -385,17 +385,17 @@ class IcuCall(JsonApiCall):
     SERVICE = 'icu'
     amz_service = 'TinaIcuService'
 
-    def get_parameters(self, request_parameters, call):
-        auth = request_parameters.pop('authentication_method', 'accesskey')
+    def get_parameters(self, data, call):
+        auth = data.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
             raise RuntimeError('Bad authentication method {}'.format(auth))
         if auth == 'password':
             try:
-                request_parameters.update(
+                data.update(
                     {
                         'AuthenticationMethod': 'password',
-                        'Login': request_parameters.pop('login'),
-                        'Password': request_parameters.pop('password'),
+                        'Login': data.pop('login'),
+                        'Password': data.pop('password'),
                     }
                 )
             except KeyError:
@@ -403,8 +403,8 @@ class IcuCall(JsonApiCall):
                     'Missing login and/or password, yet password authentification has been required'
                 )
         else:
-            request_parameters.update({'AuthenticationMethod': 'accesskey'})
-        return {'Action': call, 'Version': self.version, **request_parameters}
+            data.update({'AuthenticationMethod': 'accesskey'})
+        return {'Action': call, 'Version': self.version, **data}
 
 
 class DirectLinkCall(JsonApiCall):
