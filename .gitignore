@@ -16,6 +16,7 @@ venv/
 
 # IDE
 .idea/
+<<<<<<< HEAD
 .vscode/
 
 # System
