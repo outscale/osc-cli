@@ -404,6 +404,15 @@ class IcuCall(JsonApiCall):
                 )
         else:
             data.update({'AuthenticationMethod': 'accesskey'})
+
+
+        key_list = [key for key in data.keys()]
+        name = data.pop(key_list[0]).lower()
+        value = data.pop(key_list[1]).lower()
+        if name in {'reference', 'quota.display-name', 'quota.group-name'}:
+            data.update(
+                {'Filters':[{'Values': [value], 'Name': name}]}
+            )
         return {'Action': call, 'Version': self.version, **data}
 
 
