@@ -58,8 +58,8 @@ or
 osc-cli --service SERVICE --call CALL [PROFILE] [--CALL_PARAMS ...]
 ```
 with 
-* SERVICE one of the services provided by Outscale (fcu, lbu, eim, directconnect, icu)
-* CALL the call you request (ie DescribeInstances)
+* SERVICE one of the services provided by Outscale (api, fcu, lbu, eim, directconnect, icu)
+* CALL the call you request (ie ReadVms, DescribeInstances...)
 * PROFILE the profile you want to connect to (optional)
 * CALL_PARAMS [call arguments](http://docs.outscale.com) which are case-sensitive (optional)
 
