@@ -278,7 +278,6 @@ class FcuCall(ApiCall):
             fcu_exception.request_id = (
             xmltodict.parse(http_response.content)['Response']['RequestID'])
             raise fcu_exception
-            raise OscApiException(http_response)
 
         try:
             response = xmltodict.parse(http_response.content)
