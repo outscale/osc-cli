@@ -376,7 +376,7 @@ class JsonApiCall(ApiCall):
 
         request_url = "{}://{}".format(self.protocol, self.host)
 
-        self.response = self.(
+        self.response = self.get_response(
             requests.request(
                 method=self.method,
                 url=request_url,
