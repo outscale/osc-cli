@@ -56,6 +56,8 @@ class OscApiException(Exception):
             self.request_id = self.response.RequestId
         elif hasattr(self.response, 'requestId'):
             self.request_id = self.response.requestId
+        elif http_response.headers.get('x-amz-requestid'):
+            self.request_id = http_response.headers['x-amz-requestid']
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
         if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
@@ -272,6 +274,10 @@ class FcuCall(ApiCall):
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
+            fcu_exception = OscApiException(http_response)
+            fcu_exception.request_id = (
+            xmltodict.parse(http_response.content)['Response']['RequestID'])
+            raise fcu_exception
             raise OscApiException(http_response)
 
         try:
@@ -370,7 +376,7 @@ class JsonApiCall(ApiCall):
 
         request_url = "{}://{}".format(self.protocol, self.host)
 
-        self.response = self.get_response(
+        self.response = self.(
             requests.request(
                 method=self.method,
                 url=request_url,
