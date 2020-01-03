@@ -34,7 +34,6 @@ class OscApiException(Exception):
         self.status_code = http_response.status_code
         self.error_code = None
         self.message = None
-        self.request_id = None
         self.stack = stack
         self.response = http_response.text
         if hasattr(self.response, 'Errors'):
@@ -50,14 +49,10 @@ class OscApiException(Exception):
         if hasattr(self.response, 'Error'):
             self.error_code = self.response.Error.Code
             self.message = self.response.Error.Message
-        if hasattr(self.response, 'RequestID'):
-            self.request_id = self.response.RequestID
-        elif hasattr(self.response, 'RequestId'):
-            self.request_id = self.response.RequestId
-        elif hasattr(self.response, 'requestId'):
-            self.request_id = self.response.requestId
-        elif http_response.headers.get('x-amz-requestid'):
-            self.request_id = http_response.headers['x-amz-requestid']
+        elif type(self.response) == bytes:
+            self.request_id = (
+            xmltodict.parse(http_response.content)['Response']['RequestID'])
+        self.request_id = self.get_rid(http_response)
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
         if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
@@ -88,6 +83,13 @@ class OscApiException(Exception):
             + ', request_id = '
             + str(self.request_id)
         )
+
+    def get_rid(self, http_response):
+        requestid = http_response.headers.get('x-amz-requestid')
+        for rid in ['RequestID', 'RequestId', 'requestId']:
+            if hasattr(self.response, rid):
+                requestid = getattr(self.response, rid)
+        return requestid
 
     def get_error_message(self):
         return str(self)
@@ -274,16 +276,11 @@ class FcuCall(ApiCall):
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
-            fcu_exception = OscApiException(http_response)
-            fcu_exception.request_id = (
-            xmltodict.parse(http_response.content)['Response']['RequestID'])
-            raise fcu_exception
-
+            raise OscApiException(http_response)
         try:
             response = xmltodict.parse(http_response.content)
         except Exception:
             response = "Unable to parse response: '{}'".format(http_response.text)
-
         return response
 
 
