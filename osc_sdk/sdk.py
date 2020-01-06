@@ -31,11 +31,12 @@ logger = logging.getLogger('osc_sdk')
 class OscApiException(Exception):
     def __init__(self, http_response, stack=None):
         super(OscApiException, self).__init__()
-        self.status_code = http_response.status_code
         self.error_code = None
         self.message = None
-        self.stack = stack
         self.response = http_response.text
+        self.request_id = self.get_request_id(http_response)
+        self.stack = stack
+        self.status_code = http_response.status_code
         if hasattr(self.response, 'Errors'):
             if hasattr(self.response.Errors, 'Error'):
                 self.error_code = self.response.Errors.Error.Code
@@ -49,7 +50,6 @@ class OscApiException(Exception):
         if hasattr(self.response, 'Error'):
             self.error_code = self.response.Error.Code
             self.message = self.response.Error.Message
-        self.request_id = self.get_request_id(http_response)
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
         if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
