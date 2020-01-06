@@ -49,10 +49,7 @@ class OscApiException(Exception):
         if hasattr(self.response, 'Error'):
             self.error_code = self.response.Error.Code
             self.message = self.response.Error.Message
-        elif type(self.response) == bytes:
-            self.request_id = (
-            xmltodict.parse(http_response.content)['Response']['RequestID'])
-        self.request_id = self.get_rid(http_response)
+        self.request_id = self.get_request_id(http_response)
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
         if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
@@ -84,7 +81,7 @@ class OscApiException(Exception):
             + str(self.request_id)
         )
 
-    def get_rid(self, http_response):
+    def get_request_id(self, http_response):
         requestid = http_response.headers.get('x-amz-requestid')
         for rid in ['RequestID', 'RequestId', 'requestId']:
             if hasattr(self.response, rid):
