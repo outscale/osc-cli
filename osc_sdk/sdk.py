@@ -82,11 +82,11 @@ class OscApiException(Exception):
         )
 
     def get_request_id(self, http_response):
-        requestid = http_response.headers.get('x-amz-requestid')
-        for rid in ['RequestID', 'RequestId', 'requestId']:
-            if hasattr(self.response, rid):
-                requestid = getattr(self.response, rid)
-        return requestid
+        return (http_response.headers.get('x-amz-requestid')
+                or next(
+                    getattr(self.response, rid)
+                    if hasattr(self.response, rid) else None
+                    for rid in ['RequestID', 'RequestId', 'requestId']))
 
     def get_error_message(self):
         return str(self)
