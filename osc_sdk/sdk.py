@@ -34,7 +34,7 @@ class OscApiException(Exception):
         self.error_code = None
         self.message = None
         self.response = http_response.text
-        self.request_id = self.get_request_id(http_response)
+        self.request_id = self._get_request_id(http_response)
         self.stack = stack
         self.status_code = http_response.status_code
         if hasattr(self.response, 'Errors'):
@@ -81,12 +81,13 @@ class OscApiException(Exception):
             + str(self.request_id)
         )
 
-    def get_request_id(self, http_response):
-        return (http_response.headers.get('x-amz-requestid')
-                or next(
-                    getattr(self.response, rid)
-                    if hasattr(self.response, rid) else None
-                    for rid in ['RequestID', 'RequestId', 'requestId']))
+    @staticmethod
+    def _get_request_id(http_response):
+        for attr in ['RequestID', 'RequestId', 'requestId']:
+            value = getattr(http_response, attr, None)
+            if value:
+                return value
+        return http_response.headers.get('x-amz-requestid')
 
     def get_error_message(self):
         return str(self)
