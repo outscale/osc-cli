@@ -31,12 +31,12 @@ logger = logging.getLogger('osc_sdk')
 class OscApiException(Exception):
     def __init__(self, http_response, stack=None):
         super(OscApiException, self).__init__()
-        self.status_code = http_response.status_code
         self.error_code = None
         self.message = None
-        self.request_id = None
-        self.stack = stack
         self.response = http_response.text
+        self.request_id = self._get_request_id(http_response)
+        self.stack = stack
+        self.status_code = http_response.status_code
         if hasattr(self.response, 'Errors'):
             if hasattr(self.response.Errors, 'Error'):
                 self.error_code = self.response.Errors.Error.Code
@@ -50,12 +50,6 @@ class OscApiException(Exception):
         if hasattr(self.response, 'Error'):
             self.error_code = self.response.Error.Code
             self.message = self.response.Error.Message
-        if hasattr(self.response, 'RequestID'):
-            self.request_id = self.response.RequestID
-        elif hasattr(self.response, 'RequestId'):
-            self.request_id = self.response.RequestId
-        elif hasattr(self.response, 'requestId'):
-            self.request_id = self.response.requestId
         if hasattr(self.response, 'Message'):
             self.message = self.response.Message
         if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
@@ -86,6 +80,14 @@ class OscApiException(Exception):
             + ', request_id = '
             + str(self.request_id)
         )
+
+    @staticmethod
+    def _get_request_id(http_response):
+        for attr in ['RequestID', 'RequestId', 'requestId']:
+            value = getattr(http_response, attr, None)
+            if value:
+                return value
+        return http_response.headers.get('x-amz-requestid')
 
     def get_error_message(self):
         return str(self)
@@ -273,12 +275,10 @@ class FcuCall(ApiCall):
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
-
         try:
             response = xmltodict.parse(http_response.content)
         except Exception:
             response = "Unable to parse response: '{}'".format(http_response.text)
-
         return response
 
 
