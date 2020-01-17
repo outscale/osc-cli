@@ -11,19 +11,17 @@ import fire
 import requests
 import xmltodict
 
-SDK_VERSION = '0.1'
-USER_AGENT = 'osc_sdk ' + SDK_VERSION
-CONFIGURATION_FOLDER = '.osc_sdk'
+CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
-
-SSL_VERIFY = True
+CONFIGURATION_FOLDER = '.osc_sdk'
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
 DEFAULT_REGION = 'eu-west-2'
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
+SDK_VERSION = '0.1'
+SSL_VERIFY = True
 SUCCESS_CODES = [200, 201, 202, 203, 204]
-
-CANONICAL_URI = '/'
+USER_AGENT = 'osc_sdk ' + SDK_VERSION
 
 logger = logging.getLogger('osc_sdk')
 
@@ -80,8 +78,8 @@ class ApiCall(object):
     API_NAME = None
     CONTENT_TYPE = 'application/x-www-form-urlencoded'
     REQUEST_TYPE = 'aws4_request'
-    SIG_TYPE = 'AWS4'
     SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
+    SIG_TYPE = 'AWS4'
 
     def __init__(self, **kwargs):
         self.method = kwargs.pop('method', DEFAULT_METHOD)
@@ -422,11 +420,11 @@ class OKMSCall(JsonApiCall):
 
 
 class OSCCall(JsonApiCall):
+    API_NAME = 'api'
     CONTENT_TYPE = 'application/json'
     REQUEST_TYPE = 'osc4_request'
-    SIG_TYPE = 'OSC4'
     SIG_ALGORITHM = 'OSC4-HMAC-SHA256'
-    API_NAME = 'api'
+    SIG_TYPE = 'OSC4'
     SERVICE = 'OutscaleService'
 
     def get_parameters(self, data, call):
@@ -458,9 +456,9 @@ class OSCCall(JsonApiCall):
         )
         headers = {
             'Content-Type': self.CONTENT_TYPE,
+            'User-agent': USER_AGENT,
             'X-Osc-Date': self.date,
             'x-osc-target': target,
-            'User-agent': USER_AGENT,
         }
         return signed_headers, canonical_headers, headers
 
