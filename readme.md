@@ -61,7 +61,10 @@ with
 * SERVICE one of the services provided by Outscale (api, fcu, lbu, eim, directconnect, icu)
 * CALL the call you request (ie ReadVms, DescribeInstances...)
 * PROFILE the profile you want to connect to (optional)
-* CALL_PARAMS [call arguments](http://docs.outscale.com) which are case-sensitive (optional)
+* CALL_PARAMS call arguments which are case-sensitive (optional)
+
+You can find the `fcu`, `lbu`, `icu`, `eim`, `directlink` and `okms` descriptions on [docs.outscale.com](http://docs.outscale.com) and `api` description on [docs-beta.outscale.com](http://docs-beta.outscale.com)
+
 
 Here is an example of a simple volume creation:
 ```bash
