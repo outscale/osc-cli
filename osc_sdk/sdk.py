@@ -408,15 +408,13 @@ class IcuCall(JsonApiCall):
         else:
             data.update({'AuthenticationMethod': 'accesskey'})
 
-        key_list = [key for key in data.keys()]
-        name = data.pop(key_list[0]).lower()
-        value = data.pop(key_list[1]).lower()
-        if name in {'reference', 'quota.display-name', 'quota.group-name'}:
+        while data.get('Filters.{}.Name'.format(str(n)), None):
             data.update(
                 {
-                'Filters': [{'Values': [data['Filters.1.Values.1']],
-                              'Name': data['Filters.1.Name'].lower()}]
-                }
+                'Filters': [
+                    {'Values': [data['Filters.{0}.Values.{0}'.format(str(n))]],
+                     'Name': data['Filters.{}.Name'.format(str(n))].lower()}
+                ]}
             )
         return {'Action': call, 'Version': self.version, **data}
 
