@@ -413,7 +413,10 @@ class IcuCall(JsonApiCall):
         value = data.pop(key_list[1]).lower()
         if name in {'reference', 'quota.display-name', 'quota.group-name'}:
             data.update(
-                {'Filters':[{'Values': [value], 'Name': name}]}
+                {
+                'Filters': [{'Values': [data['Filters.1.Values.1']],
+                              'Name': data['Filters.1.Name'].lower()}]
+                }
             )
         return {'Action': call, 'Version': self.version, **data}
 
