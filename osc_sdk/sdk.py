@@ -408,6 +408,8 @@ class IcuCall(JsonApiCall):
         else:
             data.update({'AuthenticationMethod': 'accesskey'})
 
+
+        n = 1
         while data.get('Filters.{}.Name'.format(str(n)), None):
             data.update(
                 {
@@ -416,6 +418,7 @@ class IcuCall(JsonApiCall):
                      'Name': data['Filters.{}.Name'.format(str(n))].lower()}
                 ]}
             )
+            n += 1
         return {'Action': call, 'Version': self.version, **data}
 
 
