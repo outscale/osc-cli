@@ -311,6 +311,7 @@ class EimCall(FcuCall):
 
 
 class JsonApiCall(ApiCall):
+    AMZ_SERVICE = ''
     CONTENT_TYPE = 'application/x-amz-json-1.1'
 
     def get_parameters(self, data, call):
@@ -331,7 +332,7 @@ class JsonApiCall(ApiCall):
             [self.datestamp, self.region, self.SERVICE, 'aws4_request']
         )
 
-        amz_target = '.'.join([self.amz_service, call])
+        amz_target = '.'.join([self.AMZ_SERVICE, call])
         canonical_headers = (
             'host:{}\n'
             'x-amz-date:{}\n'
@@ -382,8 +383,8 @@ class JsonApiCall(ApiCall):
 
 
 class IcuCall(JsonApiCall):
+    AMZ_SERVICE = 'TinaIcuService'
     SERVICE = 'icu'
-    amz_service = 'TinaIcuService'
 
     def get_parameters(self, request_parameters, call):
         auth = request_parameters.pop('authentication_method', 'accesskey')
@@ -408,8 +409,8 @@ class IcuCall(JsonApiCall):
 
 
 class DirectLinkCall(JsonApiCall):
+    AMZ_SERVICE = 'OvertureService'
     SERVICE = 'directlink'
-    amz_service = 'OvertureService'
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
@@ -421,8 +422,8 @@ class DirectLinkCall(JsonApiCall):
 
 
 class OKMSCall(JsonApiCall):
+    AMZ_SERVICE = 'TrentService'
     SERVICE = 'kms'
-    amz_service = 'TrentService'
 
 
 def get_conf(profile):
