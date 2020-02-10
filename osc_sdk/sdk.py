@@ -5,6 +5,7 @@ import json
 import logging
 import pathlib
 import urllib
+import xml.etree.ElementTree as ET
 
 import fire
 import requests
@@ -29,68 +30,51 @@ logger = logging.getLogger('osc_sdk')
 
 
 class OscApiException(Exception):
-    def __init__(self, http_response, stack=None):
+
+    def __init__(self, http_response):
         super(OscApiException, self).__init__()
+        self.status_code = http_response.status_code
+        # Set error details
         self.error_code = None
         self.message = None
-        self.response = http_response.text
-        self.request_id = self._get_request_id(http_response)
-        self.stack = stack
-        self.status_code = http_response.status_code
-        if hasattr(self.response, 'Errors'):
-            if hasattr(self.response.Errors, 'Error'):
-                self.error_code = self.response.Errors.Error.Code
-                self.message = self.response.Errors.Error.Message
-            elif type(self.response.Errors) is list:
-                self.error_code = self.response.Errors[0].error_code
-                if hasattr(self.response.Errors[0], 'description'):
-                    self.message = self.response.Errors[0].description
-                elif hasattr(self.response.Errors[0], 'data'):
-                    self.message = self.response.Errors[0].data
-        if hasattr(self.response, 'Error'):
-            self.error_code = self.response.Error.Code
-            self.message = self.response.Error.Message
-        if hasattr(self.response, 'Message'):
-            self.message = self.response.Message
-        if hasattr(self.response, 'result') and hasattr(self.response.result, 'result'):
-            self.error_code = self.response.result.faultcode
-            self.message = self.response.result.faultmessage
-        if hasattr(self.response, '__type'):
-            self.error_code = getattr(self.response, '__type')
-        if hasattr(self.response, 'faultcode'):
-            self.error_code = self.response.faultcode
-            self.message = self.response.faultstring
-        if hasattr(self.response, 'error'):
-            if hasattr(self.response.error, 'message'):
-                self.error_code = self.response.error.code
-                self.message = self.response.error.message
-            else:
-                self.message = self.response.error
-        if isinstance(self.response, str):
-            self.message = self.response
+        self.request_id = None
+        self._set(http_response)
 
     def __str__(self):
         return (
-            'Error --> status = '
-            + str(self.status_code)
-            + ', code = '
-            + str(self.error_code)
-            + ', Reason = '
-            + str(self.message)
-            + ', request_id = '
-            + str(self.request_id)
-        )
+            'Error --> status = {}, code = {}, Reason = {}, request_id = '
+            '{}'.format(self.status_code, self.error_code, self.message,
+                        self.request_id))
 
-    @staticmethod
-    def _get_request_id(http_response):
-        for attr in ['RequestID', 'RequestId', 'requestId']:
-            value = getattr(http_response, attr, None)
-            if value:
-                return value
-        return http_response.headers.get('x-amz-requestid')
+    def _set(self, http_response):
+        content = http_response.content.decode()
+        # In case it is JSON error format
+        try:
+            error = json.loads(content)
+        except json.JSONDecodeError:
+            pass
+        else:
+            self.error_code = error.get('__type')
+            self.message = error.get('message')
+            self.request_id = http_response.headers.get('x-amz-requestid')
+            return
 
-    def get_error_message(self):
-        return str(self)
+        # In case it is XML format
+        try:
+            error = ET.fromstring(content)
+        except ET.ParseError:
+            return
+        else:
+            for key, attr in [('Code', 'error_code'),
+                              ('Message', 'message'),
+                              ('RequestId', 'request_id'),
+                              ('RequestID', 'request_id')]:
+                value = next((x.text
+                              for x in error.iter()
+                              if x.tag.endswith(key)),
+                             None)
+                if value:
+                    setattr(self, attr, value)
 
 
 class ApiCall(object):
