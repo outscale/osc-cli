@@ -57,7 +57,7 @@ class OscApiException(Exception):
                 self.request_id = http_response.headers.get('x-amz-requestid')
             else:
                 errors = error.get('Errors', [])
-                if len(errors) > 0:
+                if errors:
                     self.error_code = errors[0].get('Code')
                     self.message = errors[0].get('Type')
                 self.request_id = error.get('ResponseContext', {}).get('RequestId')
