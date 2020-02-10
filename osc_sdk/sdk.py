@@ -51,9 +51,16 @@ class OscApiException(Exception):
         except json.JSONDecodeError:
             pass
         else:
-            self.error_code = error.get('__type')
-            self.message = error.get('message')
-            self.request_id = http_response.headers.get('x-amz-requestid')
+            if '__type' in error:
+                self.error_code = error.get('__type')
+                self.message = error.get('message')
+                self.request_id = http_response.headers.get('x-amz-requestid')
+            else:
+                errors = error.get('Errors', [])
+                if len(errors) > 0:
+                    self.error_code = errors[0].get('Code')
+                    self.message = errors[0].get('Type')
+                self.request_id = error.get('ResponseContext', {}).get('RequestId')
             return
 
         # In case it is XML format
