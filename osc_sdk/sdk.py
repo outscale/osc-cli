@@ -11,20 +11,17 @@ import fire
 import requests
 import xmltodict
 
-SDK_VERSION = '0.1'
-USER_AGENT = 'osc_sdk ' + SDK_VERSION
-CONFIGURATION_FOLDER = '.osc_sdk'
+CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
-
-SSL_VERIFY = True
+CONFIGURATION_FOLDER = '.osc_sdk'
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
 DEFAULT_REGION = 'eu-west-2'
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
+SDK_VERSION = '0.1'
+SSL_VERIFY = True
 SUCCESS_CODES = [200, 201, 202, 203, 204]
-
-SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
-CANONICAL_URI = '/'
+USER_AGENT = 'osc_sdk ' + SDK_VERSION
 
 logger = logging.getLogger('osc_sdk')
 
@@ -54,9 +51,16 @@ class OscApiException(Exception):
         except json.JSONDecodeError:
             pass
         else:
-            self.error_code = error.get('__type')
-            self.message = error.get('message')
-            self.request_id = http_response.headers.get('x-amz-requestid')
+            if '__type' in error:
+                self.error_code = error.get('__type')
+                self.message = error.get('message')
+                self.request_id = http_response.headers.get('x-amz-requestid')
+            else:
+                errors = error.get('Errors', [])
+                if errors:
+                    self.error_code = errors[0].get('Code')
+                    self.message = errors[0].get('Type')
+                self.request_id = error.get('ResponseContext', {}).get('RequestId')
             return
 
         # In case it is XML format
@@ -78,8 +82,11 @@ class OscApiException(Exception):
 
 
 class ApiCall(object):
-    SERVICE = None
+    API_NAME = None
     CONTENT_TYPE = 'application/x-www-form-urlencoded'
+    REQUEST_TYPE = 'aws4_request'
+    SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
+    SIG_TYPE = 'AWS4'
 
     def __init__(self, **kwargs):
         self.method = kwargs.pop('method', DEFAULT_METHOD)
@@ -88,11 +95,12 @@ class ApiCall(object):
         self.version = kwargs.pop('version', DEFAULT_VERSION)
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
-        self.host = '.'.join([self.SERVICE, self.region, kwargs.pop('host')])
+        self.host = '.'.join([self.API_NAME, self.region, kwargs.pop('host')])
         self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
+        self.canonical_uri = CANONICAL_URI
 
         date = datetime.datetime.utcnow()
-        self.amz_date = date.strftime('%Y%m%dT%H%M%SZ')
+        self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
 
     @property
@@ -111,30 +119,30 @@ class ApiCall(object):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
     def get_signature_key(self, key, timestamp, region_name, service_name):
-        key_date = self.sign(('AWS4' + key).encode('utf-8'), timestamp)
+        key_date = self.sign((self.SIG_TYPE + key).encode('utf-8'), timestamp)
         key_region = self.sign(key_date, region_name)
         key_service = self.sign(key_region, service_name)
-        return self.sign(key_service, 'aws4_request')
+        return self.sign(key_service, self.REQUEST_TYPE)
 
     def get_authorization_header(
         self, amz_date, credential_scope, canonical_request, signed_headers, timestamp
     ):
         string_to_sign = '\n'.join(
             [
-                SIG_ALGORITHM,
-                self.amz_date,
+                self.SIG_ALGORITHM,
+                self.date,
                 credential_scope,
                 hashlib.sha256(canonical_request.encode('utf-8')).hexdigest(),
             ]
         )
         signing_key = self.get_signature_key(
-            self.secret_key, timestamp, self.region, self.SERVICE
+            self.secret_key, timestamp, self.region, self.API_NAME
         )
         signature = hmac.new(
             signing_key, (string_to_sign).encode('utf-8'), hashlib.sha256
         ).hexdigest()
         return '{} Credential={}/{}, SignedHeaders={}, Signature={}'.format(
-            SIG_ALGORITHM, self.access_key, credential_scope, signed_headers, signature
+            self.SIG_ALGORITHM, self.access_key, credential_scope, signed_headers, signature
         )
 
     def get_response(self, request):
@@ -162,7 +170,7 @@ class ApiCall(object):
 
     def make_request(self, call, *args, **kwargs):
         date = datetime.datetime.utcnow()
-        self.amz_date = date.strftime('%Y%m%dT%H%M%SZ')
+        self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
 
         request_parameters = self.get_parameters(data=kwargs)
@@ -171,12 +179,12 @@ class ApiCall(object):
             request_parameters['Version'] = self.version
 
         credential_scope = '/'.join(
-            [self.datestamp, self.region, self.SERVICE, 'aws4_request']
+            [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
         )
 
         if self.method == 'GET':
             canonical_headers = '\n'.join(
-                ['host:' + self.host, 'x-amz-date:' + self.amz_date, '']
+                ['host:' + self.host, 'x-amz-date:' + self.date, '']
             )
             signed_headers = 'host;x-amz-date'
             payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
@@ -184,7 +192,7 @@ class ApiCall(object):
             canonical_request = '\n'.join(
                 [
                     self.method,
-                    CANONICAL_URI,
+                    self.canonical_uri,
                     request_parameters,
                     canonical_headers,
                     signed_headers,
@@ -197,7 +205,7 @@ class ApiCall(object):
             request_parameters = None
         else:
             amz_target = '{}_{}.{}'.format(
-                self.SERVICE, datetime.date.today().strftime("%Y%m%d"), call
+                self.API_NAME, datetime.date.today().strftime("%Y%m%d"), call
             )
             request_parameters = urllib.parse.urlencode(request_parameters)
             canonical_headers = (
@@ -205,7 +213,7 @@ class ApiCall(object):
                 'host:{}\n'
                 'x-amz-date:{}\n'
                 'x-amz-target:{}\n'.format(
-                    self.CONTENT_TYPE, self.host, self.amz_date, amz_target
+                    self.CONTENT_TYPE, self.host, self.date, amz_target
                 )
             )
             signed_headers = 'content-type;host;x-amz-date;x-amz-target'
@@ -216,7 +224,7 @@ class ApiCall(object):
             canonical_request = '\n'.join(
                 [
                     self.method,
-                    CANONICAL_URI,
+                    self.canonical_uri,
                     '',
                     canonical_headers,
                     signed_headers,
@@ -225,7 +233,7 @@ class ApiCall(object):
             )
 
         authorization_header = self.get_authorization_header(
-            self.amz_date,
+            self.date,
             credential_scope,
             canonical_request,
             signed_headers,
@@ -234,7 +242,7 @@ class ApiCall(object):
 
         headers = {
             'Authorization': authorization_header,
-            'x-amz-date': self.amz_date,
+            'x-amz-date': self.date,
             'User-agent': USER_AGENT,
         }
         if self.method == 'POST':
@@ -254,7 +262,7 @@ class ApiCall(object):
 
 
 class FcuCall(ApiCall):
-    SERVICE = 'fcu'
+    API_NAME = 'fcu'
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
@@ -267,7 +275,7 @@ class FcuCall(ApiCall):
 
 
 class LbuCall(FcuCall):
-    SERVICE = 'lbu'
+    API_NAME = 'lbu'
 
     def get_parameters(self, data, prefix=''):
         ret = {}
@@ -291,11 +299,11 @@ class LbuCall(FcuCall):
 
 
 class EimCall(FcuCall):
-    SERVICE = 'eim'
+    API_NAME = 'eim'
 
 
 class JsonApiCall(ApiCall):
-    AMZ_SERVICE = ''
+    SERVICE = ''
     CONTENT_TYPE = 'application/x-amz-json-1.1'
 
     def get_parameters(self, data, call):
@@ -307,26 +315,43 @@ class JsonApiCall(ApiCall):
 
         return json.loads(http_response.text)
 
-    def make_request(self, call, *args, **kwargs):
-        request_parameters = self.get_parameters(kwargs, call)
-        json_parameters = json.dumps(request_parameters)
+    def build_url(self, call):
+        return "{}://{}".format(self.protocol, self.host)
 
+    def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-amz-date;x-amz-target'
-        credential_scope = '/'.join(
-            [self.datestamp, self.region, self.SERVICE, 'aws4_request']
-        )
-
-        amz_target = '.'.join([self.AMZ_SERVICE, call])
         canonical_headers = (
             'host:{}\n'
             'x-amz-date:{}\n'
-            'x-amz-target:{}\n'.format(self.host, self.amz_date, amz_target)
+            'x-amz-target:{}\n'.format(self.host, self.date, target)
         )
+        headers = {
+            'content-type': self.CONTENT_TYPE,
+            'x-amz-date': self.date,
+            'x-amz-target': target,
+            'User-agent': USER_AGENT,
+            'content-length': str(len(json_parameters)),
+        }
+        return signed_headers, canonical_headers, headers
+
+    def make_request(self, call, *args, **kwargs):
+        request_parameters = self.get_parameters(kwargs, call)
+        request_url = self.build_url(call)
+        json_parameters = json.dumps(request_parameters)
+
+        credential_scope = '/'.join(
+            [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
+        )
+
+        target = '.'.join([self.SERVICE, call])
+
+        signed_headers, canonical_headers, headers = self.build_headers(
+            target, json_parameters)
 
         canonical_request = '\n'.join(
             [
                 'POST',
-                CANONICAL_URI,
+                self.canonical_uri,
                 '',
                 canonical_headers,
                 signed_headers,
@@ -334,26 +359,17 @@ class JsonApiCall(ApiCall):
             ]
         )
 
-        headers = {
-            'content-type': self.CONTENT_TYPE,
-            'x-amz-date': self.amz_date,
-            'x-amz-target': amz_target,
-            'User-agent': USER_AGENT,
-            'content-length': str(len(json_parameters)),
-        }
         if (
             not request_parameters.get('AuthenticationMethod')
             or request_parameters['AuthenticationMethod'] == 'accesskey'
         ):
             headers['Authorization'] = self.get_authorization_header(
-                self.amz_date,
+                self.date,
                 credential_scope,
                 canonical_request,
                 signed_headers,
                 self.datestamp,
             )
-
-        request_url = "{}://{}".format(self.protocol, self.host)
 
         self.response = self.get_response(
             requests.request(
@@ -367,8 +383,8 @@ class JsonApiCall(ApiCall):
 
 
 class IcuCall(JsonApiCall):
-    AMZ_SERVICE = 'TinaIcuService'
-    SERVICE = 'icu'
+    API_NAME = 'icu'
+    SERVICE = 'TinaIcuService'
 
     def get_parameters(self, request_parameters, call):
         auth = request_parameters.pop('authentication_method', 'accesskey')
@@ -393,8 +409,8 @@ class IcuCall(JsonApiCall):
 
 
 class DirectLinkCall(JsonApiCall):
-    AMZ_SERVICE = 'OvertureService'
-    SERVICE = 'directlink'
+    API_NAME = 'directlink'
+    SERVICE = 'OvertureService'
 
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
@@ -406,8 +422,52 @@ class DirectLinkCall(JsonApiCall):
 
 
 class OKMSCall(JsonApiCall):
-    AMZ_SERVICE = 'TrentService'
-    SERVICE = 'kms'
+    API_NAME = 'kms'
+    SERVICE = 'TrentService'
+
+
+class OSCCall(JsonApiCall):
+    API_NAME = 'api'
+    CONTENT_TYPE = 'application/json'
+    REQUEST_TYPE = 'osc4_request'
+    SIG_ALGORITHM = 'OSC4-HMAC-SHA256'
+    SIG_TYPE = 'OSC4'
+    SERVICE = 'OutscaleService'
+
+    def get_parameters(self, data, call):
+        parameters = {}
+        for k, v in data.items():
+            self.format_data(parameters, k, v)
+        return parameters
+
+    def format_data(self, parameters, key, value):
+        if '.' in key:
+            head_key = key.split('.', 1)[0]
+            queue_key = key.split('.', 1)[1]
+            if head_key not in parameters:
+                parameters[head_key] = {}
+            self.format_data(parameters[head_key], queue_key, value)
+        else:
+            parameters[key] = value
+
+    def build_url(self, call):
+        self.canonical_uri = '/{}/latest/{}'.format(self.API_NAME, call)
+        return '/'.join([super().build_url(call), self.canonical_uri])
+
+    def build_headers(self, target, json_parameters):
+        signed_headers = 'host;x-osc-date;x-osc-target'
+        canonical_headers = (
+            'host:{}\n'
+            'x-osc-date:{}\n'
+            'x-osc-target:{}\n'.format(self.host, self.date, target)
+        )
+        headers = {
+            'Content-Type': self.CONTENT_TYPE,
+            'User-agent': USER_AGENT,
+            'X-Osc-Date': self.date,
+            'x-osc-target': target,
+        }
+        return signed_headers, canonical_headers, headers
 
 
 def get_conf(profile):
@@ -424,6 +484,7 @@ def get_conf(profile):
 
 def api_connect(service, call, profile='default', *args, **kwargs):
     calls = {
+        'api': OSCCall,
         'directlink': DirectLinkCall,
         'eim': EimCall,
         'fcu': FcuCall,
