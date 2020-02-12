@@ -56,11 +56,13 @@ class OscApiException(Exception):
                 self.message = error.get('message')
                 self.request_id = http_response.headers.get('x-amz-requestid')
             else:
-                errors = error.get('Errors', [])
+                self.request_id = (error.get('ResponseContext') or {}
+                                   ).get('RequestId')
+                errors = error.get('Errors')
                 if errors:
-                    self.error_code = errors[0].get('Code')
-                    self.message = errors[0].get('Type')
-                self.request_id = error.get('ResponseContext', {}).get('RequestId')
+                    error = errors[0]
+                    self.error_code = error.get('Code')
+                    self.message = error.get('Type')
             return
 
         # In case it is XML format
@@ -451,10 +453,8 @@ class OSCCall(JsonApiCall):
 
     def format_data(self, parameters, key, value):
         if '.' in key:
-            head_key = key.split('.', 1)[0]
-            queue_key = key.split('.', 1)[1]
-            if head_key not in parameters:
-                parameters[head_key] = {}
+            head_key, queue_key = key.split('.', 1)
+            parameters.setdefault(head_key, {})
             self.format_data(parameters[head_key], queue_key, value)
         else:
             parameters[key] = value
