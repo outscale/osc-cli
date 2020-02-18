@@ -408,18 +408,23 @@ class IcuCall(JsonApiCall):
         else:
             data.update({'AuthenticationMethod': 'accesskey'})
 
-
-        n = 1
-        while data.get('Filters.{}.Name'.format(str(n)), None):
-            data.update(
-                {
-                'Filters': [
-                    {'Values': [data['Filters.{0}.Values.{0}'.format(str(n))]],
-                     'Name': data['Filters.{}.Name'.format(str(n))].lower()}
-                ]}
-            )
+        n = 0
+        all_filters = []
+        while n <= len(data):
             n += 1
+            name = data.get('Filters.{}.Name'.format(str(n)), None)
+            if name:
+                filters = {}
+                filters['Values'] = [v for k, v in data.items()
+                                     if '{}.Values'.format(str(n)) in k]
+                filters['Name'] = name.lower()
+                all_filters.append(filters)
+
+        data.update({'Filters': all_filters})
+
         return {'Action': call, 'Version': self.version, **data}
+
+
 
 
 class DirectLinkCall(JsonApiCall):
