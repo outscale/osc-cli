@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="osc-sdk",
-    version='1.1',
+    version='1.2',
     packages=find_packages(),
     author='Outscale SAS',
     author_email='contact@outscale.com',
