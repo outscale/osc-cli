@@ -388,17 +388,17 @@ class IcuCall(JsonApiCall):
     API_NAME = 'icu'
     SERVICE = 'TinaIcuService'
 
-    def get_parameters(self, request_parameters, call):
-        auth = request_parameters.pop('authentication_method', 'accesskey')
+    def get_parameters(self, data, call):
+        auth = data.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
             raise RuntimeError('Bad authentication method {}'.format(auth))
         if auth == 'password':
             try:
-                request_parameters.update(
+                data.update(
                     {
                         'AuthenticationMethod': 'password',
-                        'Login': request_parameters.pop('login'),
-                        'Password': request_parameters.pop('password'),
+                        'Login': data.pop('login'),
+                        'Password': data.pop('password'),
                     }
                 )
             except KeyError:
@@ -406,8 +406,22 @@ class IcuCall(JsonApiCall):
                     'Missing login and/or password, yet password authentification has been required'
                 )
         else:
-            request_parameters.update({'AuthenticationMethod': 'accesskey'})
-        return {'Action': call, 'Version': self.version, **request_parameters}
+            data.update({'AuthenticationMethod': 'accesskey'})
+
+        n = 0
+        all_filters = []
+        while n <= len(data):
+            n += 1
+            name = data.get('Filters.{}.Name'.format(str(n)), None)
+            if name:
+                filters = {}
+                filters['Values'] = [v for k, v in data.items()
+                                     if '{}.Values'.format(str(n)) in k]
+                filters['Name'] = name.lower()
+                all_filters.append(filters)
+
+        data.update({'Filters': all_filters})
+        return {'Action': call, 'Version': self.version, **data}
 
 
 class DirectLinkCall(JsonApiCall):
