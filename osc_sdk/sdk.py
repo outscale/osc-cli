@@ -90,6 +90,9 @@ class ApiCall(object):
     SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
     SIG_TYPE = 'AWS4'
 
+    date = None
+    datestamp = None
+
     def __init__(self, **kwargs):
         self.method = kwargs.pop('method', DEFAULT_METHOD)
         self.access_key = kwargs.pop('access_key')
@@ -100,10 +103,6 @@ class ApiCall(object):
         self.host = '.'.join([self.API_NAME, self.region, kwargs.pop('host')])
         self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
         self.canonical_uri = CANONICAL_URI
-
-        date = datetime.datetime.utcnow()
-        self.date = date.strftime('%Y%m%dT%H%M%SZ')
-        self.datestamp = date.strftime('%Y%m%d')
 
     @property
     def method(self):
@@ -337,6 +336,8 @@ class JsonApiCall(ApiCall):
         return signed_headers, canonical_headers, headers
 
     def make_request(self, call, *args, **kwargs):
+        self.datestamp = datetime.datetime.utcnow().strftime('%Y%m%d')
+
         request_parameters = self.get_parameters(kwargs, call)
         request_url = self.build_url(call)
         json_parameters = json.dumps(request_parameters)
