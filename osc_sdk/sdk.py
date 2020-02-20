@@ -388,46 +388,6 @@ class JsonApiCall(ApiCall):
 class IcuCall(JsonApiCall):
     API_NAME = 'icu'
     SERVICE = 'TinaIcuService'
-
-    def get_parameters(self, data, call):
-        auth = data.pop('authentication_method', 'accesskey')
-        if auth not in {'accesskey', 'password'}:
-            raise RuntimeError('Bad authentication method {}'.format(auth))
-        if auth == 'password':
-            try:
-                data.update(
-                    {
-                        'AuthenticationMethod': 'password',
-                        'Login': data.pop('login'),
-                        'Password': data.pop('password'),
-                    }
-                )
-            except KeyError:
-                raise RuntimeError(
-                    'Missing login and/or password, yet password authentification has been required'
-                )
-        else:
-            data.update({'AuthenticationMethod': 'accesskey'})
-
-        n = 0
-        all_filters = []
-        while n <= len([x for x in data.keys() if 'Filters' in x]):
-            n += 1
-            name = data.get('Filters.{}.Name'.format(n), None)
-            if name:
-                filters = {}
-                filters['Values'] = [v for k, v in data.items()
-                                     if '{}.Values'.format(n) in k]
-                filters['Name'] = name.lower()
-                all_filters.append(filters)
-
-        data.update({'Filters': all_filters})
-        return {'Action': call, 'Version': self.version, **data}
-
-
-class IcuCall(JsonApiCall):
-    API_NAME = 'icu'
-    SERVICE = 'TinaIcuService'
     FILTERS_NAME_PATTERN = re.compile('^Filters.([0-9]*).Name$')
     FILTERS_VALUES_STR = '^Filters.%s.Values.[0-9]*$'
 
