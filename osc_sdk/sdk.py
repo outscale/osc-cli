@@ -4,6 +4,7 @@ import hmac
 import json
 import logging
 import pathlib
+import re
 import urllib
 import xml.etree.ElementTree as ET
 
@@ -422,6 +423,54 @@ class IcuCall(JsonApiCall):
 
         data.update({'Filters': all_filters})
         return {'Action': call, 'Version': self.version, **data}
+
+
+class IcuCall(JsonApiCall):
+    API_NAME = 'icu'
+    SERVICE = 'TinaIcuService'
+    FILTERS_NAME_PATTERN = re.compile('^Filters.([0-9]*).Name$')
+    FILTERS_VALUES_STR = '^Filters.%s.Values.[0-9]*$'
+
+    def get_parameters(self, data, call):
+        auth = data.pop('authentication_method', 'accesskey')
+        if auth not in {'accesskey', 'password'}:
+            raise RuntimeError('Bad authentication method {}'.format(auth))
+        if auth == 'password':
+            try:
+                data.update({
+                    'Login': data.pop('login'),
+                    'Password': data.pop('password'),
+                })
+            except KeyError:
+                raise RuntimeError('Missing login and/or password, yet '
+                                   'password authentication has been '
+                                   'required')
+				else:
+            data.update({'AuthenticationMethod': 'accesskey'})
+
+        filters = self.get_filters(data)
+        data = {k: v for k, v in data.items() if not k.startswith('Filters.')}
+        return {'Action': call,
+                'AuthenticationMethod': auth,
+                'Filters': filters,
+                'Version': self.version,
+                **data}
+
+    def get_filters(self, data):
+        filters = []
+        for k, v in data.items():
+            match = re.search(self.FILTERS_NAME_PATTERN, k)
+            if match:
+                value_pattern = re.compile(self.FILTERS_VALUES_STR
+                                           % match.group(1))
+                values = [v for k, v in data.items()
+                          if re.match(value_pattern, k)]
+                if values:
+                    filters.append({
+                        'Name': v.lower(),
+                        'Values': values,
+                    })
+        return filters
 
 
 class DirectLinkCall(JsonApiCall):
