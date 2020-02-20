@@ -410,13 +410,13 @@ class IcuCall(JsonApiCall):
 
         n = 0
         all_filters = []
-        while n <= len(data):
+        while n <= len([x for x in data.keys() if 'Filters' in x]):
             n += 1
-            name = data.get('Filters.{}.Name'.format(str(n)), None)
+            name = data.get('Filters.{}.Name'.format(n), None)
             if name:
                 filters = {}
                 filters['Values'] = [v for k, v in data.items()
-                                     if '{}.Values'.format(str(n)) in k]
+                                     if '{}.Values'.format(n) in k]
                 filters['Name'] = name.lower()
                 all_filters.append(filters)
 
