@@ -405,8 +405,6 @@ class IcuCall(JsonApiCall):
                 raise RuntimeError('Missing login and/or password, yet '
                                    'password authentication has been '
                                    'required')
-				else:
-            data.update({'AuthenticationMethod': 'accesskey'})
 
         filters = self.get_filters(data)
         data = {k: v for k, v in data.items() if not k.startswith('Filters.')}
@@ -427,7 +425,7 @@ class IcuCall(JsonApiCall):
                           if re.match(value_pattern, k)]
                 if values:
                     filters.append({
-                        'Name': v.lower(),
+                        'Name': v,
                         'Values': values,
                     })
         return filters
