@@ -4,6 +4,7 @@ import hmac
 import json
 import logging
 import pathlib
+import re
 import urllib
 import xml.etree.ElementTree as ET
 
@@ -387,27 +388,47 @@ class JsonApiCall(ApiCall):
 class IcuCall(JsonApiCall):
     API_NAME = 'icu'
     SERVICE = 'TinaIcuService'
+    FILTERS_NAME_PATTERN = re.compile('^Filters.([0-9]*).Name$')
+    FILTERS_VALUES_STR = '^Filters.%s.Values.[0-9]*$'
 
-    def get_parameters(self, request_parameters, call):
-        auth = request_parameters.pop('authentication_method', 'accesskey')
+    def get_parameters(self, data, call):
+        auth = data.pop('authentication_method', 'accesskey')
         if auth not in {'accesskey', 'password'}:
             raise RuntimeError('Bad authentication method {}'.format(auth))
         if auth == 'password':
             try:
-                request_parameters.update(
-                    {
-                        'AuthenticationMethod': 'password',
-                        'Login': request_parameters.pop('login'),
-                        'Password': request_parameters.pop('password'),
-                    }
-                )
+                data.update({
+                    'Login': data.pop('login'),
+                    'Password': data.pop('password'),
+                })
             except KeyError:
-                raise RuntimeError(
-                    'Missing login and/or password, yet password authentification has been required'
-                )
-        else:
-            request_parameters.update({'AuthenticationMethod': 'accesskey'})
-        return {'Action': call, 'Version': self.version, **request_parameters}
+                raise RuntimeError('Missing login and/or password, yet '
+                                   'password authentication has been '
+                                   'required')
+
+        filters = self.get_filters(data)
+        data = {k: v for k, v in data.items() if not k.startswith('Filters.')}
+        return {'Action': call,
+                'AuthenticationMethod': auth,
+                'Filters': filters,
+                'Version': self.version,
+                **data}
+
+    def get_filters(self, data):
+        filters = []
+        for k, v in data.items():
+            match = re.search(self.FILTERS_NAME_PATTERN, k)
+            if match:
+                value_pattern = re.compile(self.FILTERS_VALUES_STR
+                                           % match.group(1))
+                values = [v for k, v in data.items()
+                          if re.match(value_pattern, k)]
+                if values:
+                    filters.append({
+                        'Name': v,
+                        'Values': values,
+                    })
+        return filters
 
 
 class DirectLinkCall(JsonApiCall):
