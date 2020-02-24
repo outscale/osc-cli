@@ -470,7 +470,7 @@ class OSCCall(JsonApiCall):
             self.format_data(parameters[head_key], queue_key, value)
         else:
             parameters[key] = (
-                [value[1:-1]] if value.startswith('[') else value
+                value[1:-1].split(',') if value.startswith('[') else value
             )
 
 
