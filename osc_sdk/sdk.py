@@ -468,10 +468,11 @@ class OSCCall(JsonApiCall):
             head_key, queue_key = key.split('.', 1)
             parameters.setdefault(head_key, {})
             self.format_data(parameters[head_key], queue_key, value)
-        elif '[' in value:
-            parameters[key] = [value[1:-1]]
         else:
-            parameters[key] = value
+            parameters[key] = (
+                [value[1:-1]] if value.startswith('[') else value
+            )
+
 
     def build_url(self, call):
         self.canonical_uri = '/{}/latest/{}'.format(self.API_NAME, call)
