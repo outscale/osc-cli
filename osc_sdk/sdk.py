@@ -475,6 +475,7 @@ class OSCCall(JsonApiCall):
                 else value
             )
 
+
     def build_url(self, call):
         self.canonical_uri = '/{}/latest/{}'.format(self.API_NAME, call)
         return '/'.join([super().build_url(call), self.canonical_uri])

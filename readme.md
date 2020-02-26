@@ -95,6 +95,25 @@ $ osc-cli icu CreateAccount --Email "example@email.com"
 			    --CustomerId '"12345678"'
 ```
 
+Another example with an array of strings into args:  
+```bash
+$ osc-cli api CreateDhcpOptions --DomainName="toot.toot" 
+				--DomainNameServers=[1.1.1.1] 
+				--NtpServers=[1.1.1.1]
+```
+
+**Argument Parsing**  
+```bash
+$ osc-cli api example --obj=[1,2]    	# list
+$ osc-cli api example --obj=10		# int
+$ osc-cli api example --obj="10"	# int
+$ osc-cli api example --obj="'10'"	# str
+$ osc-cli api example --obj=\"10\"	# str
+
+$ osc-cli api example --obj="hello"	# str
+$ osc-cli api example --obj=hello	# str
+```
+
 ## Authentication
 
 You API crendentials are composed of an Access Key and a Secret Key located in `.osc_sdk/config.json`.
