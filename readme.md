@@ -113,6 +113,10 @@ $ osc-cli api example --obj=\"10\"	# str
 $ osc-cli api example --obj="hello"	# str
 $ osc-cli api example --obj=hello	# str
 ```
+**Warning** if you're adding a list with ids there is a workaround:
+```bash
+$ osc-cli api example --obj="['vol-12345678', 'vol-87654322']"    	# list
+```
 
 ## Authentication
 
