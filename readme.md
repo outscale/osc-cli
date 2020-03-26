@@ -98,8 +98,8 @@ $ osc-cli icu CreateAccount --Email "example@email.com"
 Another example with an array of strings into args:  
 ```bash
 $ osc-cli api CreateDhcpOptions --DomainName="toot.toot" 
-				--DomainNameServers=[1.1.1.1] 
-				--NtpServers=[1.1.1.1]
+				--DomainNameServers="['1.1.1.1']"
+				--NtpServers="['1.1.1.1']"
 ```
 
 **Argument Parsing**  
@@ -113,7 +113,7 @@ $ osc-cli api example --obj=\"10\"	# str
 $ osc-cli api example --obj="hello"	# str
 $ osc-cli api example --obj=hello	# str
 ```
-**Warning** if you're adding a list with ids there is a workaround:
+**Warning** if you're adding a list which contain strings with specifics characteres, there is a workaround:
 ```bash
 $ osc-cli api example --obj="['vol-12345678', 'vol-87654322']"    	# list
 ```
