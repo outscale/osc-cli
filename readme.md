@@ -86,20 +86,28 @@ osc-cli fcu CreateVolume --AvailabilityZone eu-west-2a --Size 10
 
 Be careful with your quotes ! If you want to pass the string `"12345678"` rather than the integer `12345678` you'll need to quote your quotes:
 ```bash
-$ osc-cli icu CreateAccount --Email "example@email.com" 
-			    --FirstName "Osc" 
-			    --LastName "Cli" 
-			    --Password "12345toto" 
-			    --ZipCode '"92000"' 
-			    --Country "France"
+$ osc-cli icu CreateAccount --Email "example@email.com" \
+			    --FirstName "Osc" \
+			    --LastName "Cli" \
+			    --Password "12345toto" \
+			    --ZipCode '"92000"' \
+			    --Country "France" \
 			    --CustomerId '"12345678"'
 ```
 
 Another example with an array of strings into args:  
 ```bash
-$ osc-cli api CreateDhcpOptions --DomainName="toot.toot" 
-				--DomainNameServers="['1.1.1.1']"
+$ osc-cli api CreateDhcpOptions --DomainName="toot.toot" \
+				--DomainNameServers="['1.1.1.1']" \
 				--NtpServers="['1.1.1.1']"
+```
+
+Example with a complex structure:
+```bash
+osc-cli icu CreateListenerRule \
+--Instances '[{"InstanceId": "i-12345678"}]' \
+--ListenerDescription '{"LoadBalancerName": "osc", "LoadBalancerPort": 80}' 
+--ListenerRuleDescription '{"RuleName": "hello", "Priority": 100, "PathPattern": "/"}' 
 ```
 
 **Argument Parsing**  
