@@ -449,6 +449,16 @@ class OKMSCall(JsonApiCall):
     SERVICE = 'TrentService'
 
 
+class OSUCall(ApiCall):
+    SERVICE = 'osu2'
+    API_NAME = 'iam'
+
+    def get_response(self, http_response):
+        if http_response.status_code not in SUCCESS_CODES:
+            raise OscApiException(http_response)
+        return http_response.content.decode()
+
+
 class OSCCall(JsonApiCall):
     API_NAME = 'api'
     CONTENT_TYPE = 'application/json'
