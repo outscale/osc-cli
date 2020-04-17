@@ -19,6 +19,7 @@ DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
 DEFAULT_REGION = 'eu-west-2'
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
+METHODS_SUPPORTED = ['GET', 'POST']
 SDK_VERSION = '0.1'
 SSL_VERIFY = True
 SUCCESS_CODES = [200, 201, 202, 203, 204]
@@ -134,9 +135,10 @@ class ApiCall(object):
 
     @method.setter
     def method(self, method):
-        if method not in {'GET', 'POST'}:
+        if method not in METHODS_SUPPORTED:
             raise Exception(
-                'Wrong method {}: only GET or POST supported.'.format(method)
+                'Wrong method {}. Supported: {}.'.format(method,
+                                                         METHODS_SUPPORTED)
             )
         self._method = method
 
