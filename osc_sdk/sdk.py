@@ -106,9 +106,9 @@ class ApiCall(object):
             self.endpoint = '.'.join([self.API_NAME, self.region, host])
 
         self.response = None
-        date = datetime.datetime.utcnow()
-        self.date = date.strftime('%Y%m%dT%H%M%SZ')
-        self.datestamp = date.strftime('%Y%m%d')
+        # These wil be set in _set_datestamp
+        self.date = None
+        self.datestamp = None
 
     @property
     def endpoint(self):
@@ -139,6 +139,11 @@ class ApiCall(object):
                 'Wrong method {}: only GET or POST supported.'.format(method)
             )
         self._method = method
+
+    def _set_datestamp(self):
+        date = datetime.datetime.utcnow()
+        self.date = date.strftime('%Y%m%dT%H%M%SZ')
+        self.datestamp = date.strftime('%Y%m%d')
 
     def sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
@@ -203,9 +208,7 @@ class ApiCall(object):
             return {prefix: str(data)}
 
     def make_request(self, call, *args, **kwargs):
-        date = datetime.datetime.utcnow()
-        self.date = date.strftime('%Y%m%dT%H%M%SZ')
-        self.datestamp = date.strftime('%Y%m%d')
+        self._set_datestamp()
 
         # Calculate request params
         request_params = self.get_parameters(data=kwargs)
@@ -365,6 +368,8 @@ class JsonApiCall(ApiCall):
         return signed_headers, canonical_headers, headers
 
     def make_request(self, call, *args, **kwargs):
+        self._set_datestamp()
+
         request_params = self.get_parameters(kwargs, call)
         json_params = json.dumps(request_params)
 
