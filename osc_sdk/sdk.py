@@ -147,15 +147,6 @@ class ApiCall(object):
         self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
 
-    def sign(self, key, msg):
-        return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
-
-    def get_signature_key(self, key, timestamp, region_name, service_name):
-        key_date = self.sign((self.SIG_TYPE + key).encode('utf-8'), timestamp)
-        key_region = self.sign(key_date, region_name)
-        key_service = self.sign(key_region, service_name)
-        return self.sign(key_service, self.REQUEST_TYPE)
-
     def get_url(self, call, request_params=None):
         value = self.endpoint
         if self.method == 'GET':
@@ -165,9 +156,10 @@ class ApiCall(object):
     def get_canonical_uri(self, call):
         return CANONICAL_URI
 
-    def get_authorization_header(
-        self, amz_date, credential_scope, canonical_request, signed_headers, timestamp
-    ):
+    def get_authorization_header(self, canonical_request, signed_headers):
+        credentials = [self.datestamp, self.region, self.API_NAME,
+                       self.REQUEST_TYPE]
+        credential_scope = '/'.join(credentials)
         string_to_sign = '\n'.join(
             [
                 self.SIG_ALGORITHM,
@@ -176,14 +168,20 @@ class ApiCall(object):
                 hashlib.sha256(canonical_request.encode('utf-8')).hexdigest(),
             ]
         )
-        signing_key = self.get_signature_key(
-            self.secret_key, timestamp, self.region, self.API_NAME
-        )
-        signature = hmac.new(
-            signing_key, (string_to_sign).encode('utf-8'), hashlib.sha256
-        ).hexdigest()
-        return '{} Credential={}/{}, SignedHeaders={}, Signature={}'.format(
-            self.SIG_ALGORITHM, self.access_key, credential_scope, signed_headers, signature
+        key = (self.SIG_TYPE + self.secret_key).encode('utf-8')
+        for msg in credentials:
+            key = hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
+        signature = hmac.new(key,
+                             string_to_sign.encode('utf-8'),
+                             hashlib.sha256).hexdigest()
+
+        return (
+            '{} Credential={}/{}, SignedHeaders={}, Signature={}'.format(
+                self.SIG_ALGORITHM,
+                self.access_key,
+                credential_scope,
+                signed_headers,
+                signature)
         )
 
     def get_response(self, request):
@@ -222,80 +220,62 @@ class ApiCall(object):
         # Calculate URL before request_params value is modified
         url = self.get_url(call, request_params)
 
-        credential_scope = '/'.join(
-            [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
-        )
-
         if self.method == 'GET':
-            canonical_headers = '\n'.join(
-                ['host:' + self.host, 'x-amz-date:' + self.date, '']
-            )
-            signed_headers = 'host;x-amz-date'
+            headers = {
+                'host': self.host,
+                'x-amz-date': self.date,
+            }
             payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
-            canonical_request = '\n'.join(
-                [
-                    self.method,
-                    self.get_canonical_uri(call),
-                    request_params,
-                    canonical_headers,
-                    signed_headers,
-                    payload_hash,
-                ]
-            )
+            canonical_params = request_params
             request_params = None
         else:
-            amz_target = '{}_{}.{}'.format(
-                self.API_NAME, datetime.date.today().strftime("%Y%m%d"), call
-            )
-            canonical_headers = (
-                'content-type:{}\n'
-                'host:{}\n'
-                'x-amz-date:{}\n'
-                'x-amz-target:{}\n'.format(
-                    self.CONTENT_TYPE, self.host, self.date, amz_target
-                )
-            )
-            signed_headers = 'content-type;host;x-amz-date;x-amz-target'
+            headers = {
+                'content-type': self.CONTENT_TYPE,
+                'host': self.host,
+                'x-amz-date': self.date,
+                'x-amz-target':
+                    '{}_{}.{}'.format(self.API_NAME,
+                                      datetime.date.today().strftime('%Y%m%d'),
+                                      call),
+            }
 
-            payload_hash = hashlib.sha256(
-                request_params.encode('utf-8')
-            ).hexdigest()
-            canonical_request = '\n'.join(
-                [
-                    self.method,
-                    self.get_canonical_uri(call),
-                    '',
-                    canonical_headers,
-                    signed_headers,
-                    payload_hash,
-                ]
+            payload_hash = (
+                hashlib.sha256(request_params.encode('utf-8')).hexdigest()
             )
+            canonical_params = ''
 
-        authorization_header = self.get_authorization_header(
-            self.date,
-            credential_scope,
-            canonical_request,
-            signed_headers,
-            self.datestamp,
+        canonical_headers = ''.join('{}:{}\n'.format(k, v)
+                                    for k, v in headers.items())
+        signed_headers = ';'.join(headers)
+        canonical_request = '\n'.join(
+            [
+                self.method,
+                self.get_canonical_uri(call),
+                canonical_params,
+                canonical_headers,
+                signed_headers,
+                payload_hash,
+            ]
         )
 
-        headers = {
-            'Authorization': authorization_header,
-            'x-amz-date': self.date,
-            'User-agent': USER_AGENT,
-        }
-        if self.method == 'POST':
-            headers['content-type'] = self.CONTENT_TYPE
-            headers['x-amz-target'] = amz_target
+        authorization_header = self.get_authorization_header(
+            canonical_request,
+            signed_headers,
+        )
 
-        self.response = self.get_response(
-            requests.request(
-                method=self.method,
-                url=url,
-                data=request_params,
-                headers=headers,
-                verify=self.ssl_verify,
-            )
+        headers.update({
+            'Authorization': authorization_header,
+            'User-agent': USER_AGENT,
+        })
+
+        self.response = (
+            self.get_response(
+                requests.request(
+                    data=request_params,
+                    headers=headers,
+                    method=self.method,
+                    url=url,
+                    verify=self.ssl_verify))
         )
 
 
@@ -375,10 +355,6 @@ class JsonApiCall(ApiCall):
         request_params = self.get_parameters(kwargs, call)
         json_params = json.dumps(request_params)
 
-        credential_scope = '/'.join(
-            [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
-        )
-
         target = '.'.join([self.SERVICE, call])
 
         signed_headers, canonical_headers, headers = self.build_headers(
@@ -400,11 +376,8 @@ class JsonApiCall(ApiCall):
             or request_params['AuthenticationMethod'] == 'accesskey'
         ):
             headers['Authorization'] = self.get_authorization_header(
-                self.date,
-                credential_scope,
                 canonical_request,
                 signed_headers,
-                self.datestamp,
             )
 
         self.response = self.get_response(
