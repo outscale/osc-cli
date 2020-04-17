@@ -98,13 +98,35 @@ class ApiCall(object):
         self.version = kwargs.pop('version', DEFAULT_VERSION)
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
-        self.host = '.'.join([self.API_NAME, self.region, kwargs.pop('host')])
         self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
-        self.canonical_uri = CANONICAL_URI
+        endpoint, host = (kwargs.get(x) for x in ['endpoint', 'host'])
+        if endpoint:
+            self.endpoint = endpoint
+        elif host:
+            self.endpoint = '.'.join([self.API_NAME, self.region, host])
 
+        self.response = None
         date = datetime.datetime.utcnow()
         self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
+
+    @property
+    def endpoint(self):
+        return self.__endpoint
+
+    @property
+    def host(self):
+        return self.__host
+
+    @endpoint.setter
+    def endpoint(self, value):
+        parsed_url = urllib.parse.urlparse(value)
+        if parsed_url.scheme:
+            self.__endpoint = value
+            self.__host = parsed_url.netloc
+        else:
+            self.__endpoint = '{}://{}'.format(self.protocol, value)
+            self.__host = value
 
     @property
     def method(self):
@@ -126,6 +148,15 @@ class ApiCall(object):
         key_region = self.sign(key_date, region_name)
         key_service = self.sign(key_region, service_name)
         return self.sign(key_service, self.REQUEST_TYPE)
+
+    def get_url(self, call, request_params=None):
+        value = self.endpoint
+        if self.method == 'GET':
+            value += '?{}'.format(request_params)
+        return value
+
+    def get_canonical_uri(self, call):
+        return CANONICAL_URI
 
     def get_authorization_header(
         self, amz_date, credential_scope, canonical_request, signed_headers, timestamp
@@ -176,10 +207,15 @@ class ApiCall(object):
         self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
 
-        request_parameters = self.get_parameters(data=kwargs)
-        request_parameters['Action'] = call
-        if 'Version' not in request_parameters:
-            request_parameters['Version'] = self.version
+        # Calculate request params
+        request_params = self.get_parameters(data=kwargs)
+        request_params['Action'] = call
+        if 'Version' not in request_params:
+            request_params['Version'] = self.version
+        request_params = urllib.parse.urlencode(request_params)
+
+        # Calculate URL before request_params value is modified
+        url = self.get_url(call, request_params)
 
         credential_scope = '/'.join(
             [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
@@ -191,26 +227,21 @@ class ApiCall(object):
             )
             signed_headers = 'host;x-amz-date'
             payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
-            request_parameters = urllib.parse.urlencode(request_parameters)
             canonical_request = '\n'.join(
                 [
                     self.method,
-                    self.canonical_uri,
-                    request_parameters,
+                    self.get_canonical_uri(call),
+                    request_params,
                     canonical_headers,
                     signed_headers,
                     payload_hash,
                 ]
             )
-            request_url = "{}://{}?{}".format(
-                self.protocol, self.host, request_parameters
-            )
-            request_parameters = None
+            request_params = None
         else:
             amz_target = '{}_{}.{}'.format(
                 self.API_NAME, datetime.date.today().strftime("%Y%m%d"), call
             )
-            request_parameters = urllib.parse.urlencode(request_parameters)
             canonical_headers = (
                 'content-type:{}\n'
                 'host:{}\n'
@@ -222,12 +253,12 @@ class ApiCall(object):
             signed_headers = 'content-type;host;x-amz-date;x-amz-target'
 
             payload_hash = hashlib.sha256(
-                request_parameters.encode('utf-8')
+                request_params.encode('utf-8')
             ).hexdigest()
             canonical_request = '\n'.join(
                 [
                     self.method,
-                    self.canonical_uri,
+                    self.get_canonical_uri(call),
                     '',
                     canonical_headers,
                     signed_headers,
@@ -251,13 +282,12 @@ class ApiCall(object):
         if self.method == 'POST':
             headers['content-type'] = self.CONTENT_TYPE
             headers['x-amz-target'] = amz_target
-            request_url = "{}://{}".format(self.protocol, self.host)
 
         self.response = self.get_response(
             requests.request(
                 method=self.method,
-                url=request_url,
-                data=request_parameters,
+                url=url,
+                data=request_params,
                 headers=headers,
                 verify=self.ssl_verify,
             )
@@ -318,9 +348,6 @@ class JsonApiCall(ApiCall):
 
         return json.loads(http_response.text)
 
-    def build_url(self, call):
-        return "{}://{}".format(self.protocol, self.host)
-
     def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-amz-date;x-amz-target'
         canonical_headers = (
@@ -338,9 +365,8 @@ class JsonApiCall(ApiCall):
         return signed_headers, canonical_headers, headers
 
     def make_request(self, call, *args, **kwargs):
-        request_parameters = self.get_parameters(kwargs, call)
-        request_url = self.build_url(call)
-        json_parameters = json.dumps(request_parameters)
+        request_params = self.get_parameters(kwargs, call)
+        json_params = json.dumps(request_params)
 
         credential_scope = '/'.join(
             [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
@@ -349,22 +375,22 @@ class JsonApiCall(ApiCall):
         target = '.'.join([self.SERVICE, call])
 
         signed_headers, canonical_headers, headers = self.build_headers(
-            target, json_parameters)
+            target, json_params)
 
         canonical_request = '\n'.join(
             [
                 'POST',
-                self.canonical_uri,
+                self.get_canonical_uri(call),
                 '',
                 canonical_headers,
                 signed_headers,
-                hashlib.sha256(json_parameters.encode('utf-8')).hexdigest(),
+                hashlib.sha256(json_params.encode('utf-8')).hexdigest(),
             ]
         )
 
         if (
-            not request_parameters.get('AuthenticationMethod')
-            or request_parameters['AuthenticationMethod'] == 'accesskey'
+            not request_params.get('AuthenticationMethod')
+            or request_params['AuthenticationMethod'] == 'accesskey'
         ):
             headers['Authorization'] = self.get_authorization_header(
                 self.date,
@@ -377,8 +403,8 @@ class JsonApiCall(ApiCall):
         self.response = self.get_response(
             requests.request(
                 method=self.method,
-                url=request_url,
-                data=json_parameters,
+                url=self.get_url(call),
+                data=json_params,
                 headers=headers,
                 verify=self.ssl_verify,
             )
@@ -481,10 +507,11 @@ class OSCCall(JsonApiCall):
         else:
             parameters[key] = value
 
+    def get_canonical_uri(self, call):
+        return '/{}/latest/{}'.format(self.API_NAME, call)
 
-    def build_url(self, call):
-        self.canonical_uri = '/{}/latest/{}'.format(self.API_NAME, call)
-        return '/'.join([super().build_url(call), self.canonical_uri])
+    def get_url(self, call, request_params=None):
+        return '/'.join([self.endpoint, self.get_canonical_uri(call)])
 
     def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-osc-date;x-osc-target'
