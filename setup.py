@@ -2,13 +2,13 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="osc-sdk",
-    version='1.2',
+    name='osc-sdk',
+    version='1.3',
     packages=find_packages(),
     author='Outscale SAS',
     author_email='contact@outscale.com',
-    description="Outscale ",
-    url="http://www.outscale.com/",
+    description='Outscale',
+    url='http://www.outscale.com/',
     entry_points={'console_scripts': ['osc-cli = osc_sdk.sdk:main']},
     install_requires=[
         'setuptools',
