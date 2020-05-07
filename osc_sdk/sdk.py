@@ -100,6 +100,7 @@ class ApiCall(object):
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
         self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
+        self.client_certificate = kwargs.pop('client_certificate')
         endpoint, host = (kwargs.get(x) for x in ['endpoint', 'host'])
         if endpoint:
             self.endpoint = endpoint
@@ -275,6 +276,7 @@ class ApiCall(object):
                     headers=headers,
                     method=self.method,
                     url=url,
+                    cert=self.client_certificate,
                     verify=self.ssl_verify))
         )
 
@@ -386,6 +388,7 @@ class JsonApiCall(ApiCall):
                 url=self.get_url(call),
                 data=json_params,
                 headers=headers,
+                cert=self.client_certificate,
                 verify=self.ssl_verify,
             )
         )
