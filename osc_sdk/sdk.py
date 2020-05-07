@@ -100,7 +100,7 @@ class ApiCall(object):
         self.protocol = 'https' if kwargs.pop('https', None) else 'http'
         self.region = kwargs.pop('region_name', DEFAULT_REGION)
         self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
-        self.client_certificate = kwargs.pop('client_certificate')
+        self.client_certificate = kwargs.get('client_certificate')
         endpoint, host = (kwargs.get(x) for x in ['endpoint', 'host'])
         if endpoint:
             self.endpoint = endpoint
