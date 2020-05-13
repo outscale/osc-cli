@@ -269,15 +269,15 @@ class ApiCall(object):
             'User-agent': USER_AGENT,
         })
 
-        self.response = (
-            self.get_response(
-                requests.request(
-                    data=request_params,
-                    headers=headers,
-                    method=self.method,
-                    url=url,
-                    cert=self.client_certificate,
-                    verify=self.ssl_verify))
+        self.response = self.get_response(
+            requests.request(
+                cert=self.client_certificate,
+                data=request_params,
+                headers=headers,
+                method=self.method,
+                url=url,
+                verify=self.ssl_verify
+            )
         )
 
 
@@ -384,11 +384,11 @@ class JsonApiCall(ApiCall):
 
         self.response = self.get_response(
             requests.request(
-                method=self.method,
-                url=self.get_url(call),
+                cert=self.client_certificate,
                 data=json_params,
                 headers=headers,
-                cert=self.client_certificate,
+                method=self.method,
+                url=self.get_url(call),
                 verify=self.ssl_verify,
             )
         )
