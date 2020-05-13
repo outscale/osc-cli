@@ -37,6 +37,7 @@ The CLI requires a configuration file in `~/.osc_sdk/config.json` The content mu
 ```json
 {"default":
     {"access_key": "MYACCESSKEY",
+     "client_certificate": "my-cert-filename",
      "secret_key": "MYSECRETKEY",
      "host": "outscale.com",
      "https": true,
