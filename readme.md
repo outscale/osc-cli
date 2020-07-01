@@ -67,7 +67,7 @@ Optional parameters can be applied to each profile :
      "host": "outscale.com",
      "https": true,
      "method": "POST",
-     "region_name": "eu-west-2"
+     "region_name": "eu-west-2",
      "version": "2018-11-19"
     }
 }
