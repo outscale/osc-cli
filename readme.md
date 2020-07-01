@@ -12,9 +12,9 @@ You will need [Python 3.5+](https://www.python.org/) or later. Earlier versions 
 
 ### Installing from package
 
-You can get the .whl file from releases and install it through:
+You can get the package from [pypi](https://pypi.org/project/osc-sdk/):
 ```
-pip3 install osc_sdk-1.2-py3-none-any.whl
+pip3 install osc-sdk
 ```
 
 ### Installing from sources
@@ -37,8 +37,33 @@ The CLI requires a configuration file in `~/.osc_sdk/config.json` The content mu
 ```json
 {"default":
     {"access_key": "MYACCESSKEY",
-     "client_certificate": "my-cert-filename",
      "secret_key": "MYSECRETKEY",
+     "host": "outscale.com",
+     "https": true,
+     "method": "POST",
+     "region_name": "eu-west-2"
+    },
+  "us":
+    {"access_key": "MYACCESSKEY",
+     "secret_key": "MYSECRETKEY",
+     "host": "outscale.com",
+     "https": true,
+     "method": "POST",
+     "region_name": "us-east-2"
+    }
+}
+```
+You can add several profiles for different regions or users.
+
+Optional parameters can be applied to each profile :
+* client_certificate: if you need additional security, your pem must include your private key and your certificate
+* version: if you want to query another version of the API
+
+```json
+{"default":
+    {"access_key": "MYACCESSKEY",
+     "secret_key": "MYSECRETKEY",
+     "client_certificate" : "path_to_your_pem",
      "host": "outscale.com",
      "https": true,
      "method": "POST",
@@ -47,7 +72,6 @@ The CLI requires a configuration file in `~/.osc_sdk/config.json` The content mu
     }
 }
 ```
-You can add several profiles for different regions or users.
 
 ## Usage
 
