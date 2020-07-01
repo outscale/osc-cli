@@ -538,7 +538,7 @@ def api_connect(service, call, profile='default', *args, **kwargs):
     handler = calls[service](**conf)
     handler.make_request(call, *args, **kwargs)
     if handler.response:
-        print(json.dumps(handler.response, indent=4))
+        return handler.response
 
 
 def main():
