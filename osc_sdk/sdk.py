@@ -533,6 +533,7 @@ def api_connect(service, call, profile='default', *args, **kwargs):
         'icu': IcuCall,
         'lbu': LbuCall,
         'okms': OKMSCall,
+        'oos': OSUCall,
     }
     conf = get_conf(profile)
     handler = calls[service](**conf)

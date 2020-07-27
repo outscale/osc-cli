@@ -88,7 +88,7 @@ with
 * PROFILE the profile you want to connect to (optional)
 * CALL_PARAMS call arguments which are case-sensitive (optional)
 
-You can find the `fcu`, `lbu`, `icu`, `eim`, `directlink`, `okms` and `api` descriptions on [docs.outscale.com](http://docs.outscale.com).
+You can find the `fcu`, `lbu`, `icu`, `eim`, `directlink`, `okms`, `oos` and `api` descriptions on [docs.outscale.com](http://docs.outscale.com).
 
 
 Here is an example of a simple volume creation:
