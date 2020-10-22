@@ -21,6 +21,6 @@ Use the same issue tracker to report problems with the documentation.
 
 We’ll do our best to review your pull request (or “PR” for short) quickly.
 
-Each PR should, as much as possible, address just one issue and be self-contained. 
-Smaller the set of changes in the pull request is, the quicker it can be reviewed and 
+Each PR should, as much as possible, address just one issue and be self-contained.
+Smaller the set of changes in the pull request is, the quicker it can be reviewed and
 merged - if you have ten small, unrelated changes, then go ahead and submit ten PRs.
