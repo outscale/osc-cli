@@ -1,0 +1,18 @@
+language: python
+python:
+- '3.6'
+- '3.7'
+- '3.8'
+- '3.9-dev'
+- 'nightly'
+install:
+  - curl https://bootstrap.pypa.io/ez_setup.py -o - | python
+  - pip install pylint
+  - pip install .
+script:
+  - pylint --disable=all --enable=E osc_sdk/
+branches:
+  only:
+    - master
+    - develop
+    - release/**
