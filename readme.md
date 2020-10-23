@@ -82,7 +82,7 @@ or
 ```
 osc-cli --service SERVICE --call CALL [PROFILE] [--CALL_PARAMS ...]
 ```
-with 
+with
 * SERVICE one of the services provided by Outscale (api, fcu, lbu, eim, directconnect, icu)
 * CALL the call you request (ie ReadVms, DescribeInstances...)
 * PROFILE the profile you want to connect to (optional)
@@ -120,7 +120,7 @@ $ osc-cli icu CreateAccount --Email "example@email.com" \
 			    --CustomerId '"12345678"'
 ```
 
-Another example with an array of strings into args:  
+Another example with an array of strings into args:
 ```bash
 $ osc-cli api CreateDhcpOptions --DomainName="toot.toot" \
 				--DomainNameServers="['1.1.1.1']" \
@@ -131,11 +131,11 @@ Example with a complex structure:
 ```bash
 osc-cli icu CreateListenerRule \
 --Instances '[{"InstanceId": "i-12345678"}]' \
---ListenerDescription '{"LoadBalancerName": "osc", "LoadBalancerPort": 80}' 
---ListenerRuleDescription '{"RuleName": "hello", "Priority": 100, "PathPattern": "/"}' 
+--ListenerDescription '{"LoadBalancerName": "osc", "LoadBalancerPort": 80}'
+--ListenerRuleDescription '{"RuleName": "hello", "Priority": 100, "PathPattern": "/"}'
 ```
 
-**Argument Parsing**  
+**Argument Parsing**
 ```bash
 $ osc-cli api example --obj=[1,2]    	# list
 $ osc-cli api example --obj=10		# int
