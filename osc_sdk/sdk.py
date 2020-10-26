@@ -196,13 +196,13 @@ class ApiCall(object):
             i = 1
             for value in data:
                 ret.update(self.get_parameters(value, prefix + str(i)))
+                i += 1
             return ret
         if isinstance(data, dict):
             if prefix:
                 prefix += '.'
             for key, value in data.items():
                 ret.update(self.get_parameters(value, prefix + key))
-                i += 1
             return ret
         if data is not None:
             if data == '':
