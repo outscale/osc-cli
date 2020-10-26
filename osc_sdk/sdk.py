@@ -202,6 +202,7 @@ class ApiCall(object):
                 prefix += '.'
             for key, value in data.items():
                 ret.update(self.get_parameters(value, prefix + key))
+                i += 1
             return ret
         if data is not None:
             if data == '':
