@@ -193,8 +193,7 @@ class ApiCall(object):
         if isinstance(data, list):
             if prefix:
                 prefix += '.'
-            i = 1
-            for value in data:
+            for i, value in enumerate(data, start=1):
                 ret.update(self.get_parameters(value, prefix + str(i)))
             return ret
         if isinstance(data, dict):
