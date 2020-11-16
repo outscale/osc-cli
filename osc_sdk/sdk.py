@@ -304,6 +304,13 @@ class LbuCall(FcuCall):
 class EimCall(FcuCall):
     API_NAME = 'eim'
 
+    def get_parameters(self, data):
+        if isinstance(data, dict):
+            policy_document = data.get('PolicyDocument')
+            if policy_document:
+                data['PolicyDocument'] = json.dumps(policy_document)
+        return data
+
 
 class JsonApiCall(ApiCall):
     SERVICE = ''
