@@ -496,7 +496,7 @@ class OSCCall(JsonApiCall):
         else:
             parameters[key] = (
                 value[1:-1].split(',')
-                if not isinstance(value, bool) and value.startswith('[')
+                if isinstance(value, str) and value.startswith('[')
                 else value
             )
 
