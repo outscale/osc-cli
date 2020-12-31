@@ -494,7 +494,11 @@ class OSCCall(JsonApiCall):
             parameters.setdefault(head_key, {})
             self.format_data(parameters[head_key], queue_key, value)
         else:
-            parameters[key] = value
+            parameters[key] = (
+                value[1:-1].split(',')
+                if isinstance(value, str) and value.startswith('[')
+                else value
+            )
 
     def get_canonical_uri(self, call):
         return '/{}/latest/{}'.format(self.API_NAME, call)
