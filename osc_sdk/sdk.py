@@ -36,14 +36,24 @@ class OscApiException(Exception):
         # Set error details
         self.error_code = None
         self.message = None
+        self.code_type = None
         self.request_id = None
         self._set(http_response)
 
     def __str__(self):
-        return (
-            'Error --> status = {}, code = {}, Reason = {}, request_id = '
-            '{}'.format(self.status_code, self.error_code, self.message,
-                        self.request_id))
+        if self.code_type is not None:
+            return (
+                f'Error --> status = {self.status_code}, '
+                f'code = {self.error_code}, '
+                f'code_type = {self.code_type}, '
+                f'Reason = {self.message}, '
+                f'request_id = {self.request_id}')
+        else:
+            return (
+                f'Error --> status = {self.status_code}, '
+                f'code = {self.error_code}, '
+                f'Reason = {self.message}, '
+                f'request_id = {self.request_id}')
 
     def _set(self, http_response):
         content = http_response.content.decode()
@@ -65,6 +75,11 @@ class OscApiException(Exception):
                     error = errors[0]
                     self.error_code = error.get('Code')
                     self.message = error.get('Type')
+                    if error.get('Details'):
+                        self.code_type = self.message
+                        self.message = error.get('Details')
+                    else:
+                        self.code_type = None
             return
 
         # In case it is XML format
