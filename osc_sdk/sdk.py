@@ -41,19 +41,13 @@ class OscApiException(Exception):
         self._set(http_response)
 
     def __str__(self):
-        if self.code_type is not None:
-            return (
-                f'Error --> status = {self.status_code}, '
-                f'code = {self.error_code}, '
-                f'code_type = {self.code_type}, '
-                f'Reason = {self.message}, '
-                f'request_id = {self.request_id}')
-        else:
-            return (
-                f'Error --> status = {self.status_code}, '
-                f'code = {self.error_code}, '
-                f'Reason = {self.message}, '
-                f'request_id = {self.request_id}')
+        return (
+            f'Error --> status = {self.status_code}, '
+            f'code = {self.error_code}, '
+            f'{"code_type = " if self.code_type is not None else ""}'
+            f'{self.code_type + ", " if self.code_type is not None else ""}'
+            f'Reason = {self.message}, '
+            f'request_id = {self.request_id}')
 
     def _set(self, http_response):
         content = http_response.content.decode()
