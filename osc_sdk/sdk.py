@@ -6,7 +6,7 @@ import logging
 import pathlib
 import re
 import urllib
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 import fire
 import requests
