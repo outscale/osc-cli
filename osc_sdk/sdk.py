@@ -14,7 +14,8 @@ import xmltodict
 
 CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
-CONFIGURATION_FOLDER = '.osc_sdk'
+CONFIGURATION_FOLDER = '.osc'
+OLD_CONFIGURATION_FOLDER = '.osc_sdk'
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = None
 DEFAULT_REGION = 'eu-west-2'
@@ -532,9 +533,16 @@ class OSCCall(JsonApiCall):
 
 
 def get_conf(profile):
-    conf_path = pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE
-    if not conf_path.exists():
+    conf_paths = {
+        pathlib.Path.home() / OLD_CONFIGURATION_FOLDER / CONFIGURATION_FILE,
+        pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE,
+    }
+    # Raise an error if neither of the two paths exists.
+    if not any(path.exists() for path in conf_paths):
         raise RuntimeError('No configuration file found in home folder')
+
+    # Check which conf_path is used.
+    conf_path = next(path for path in conf_paths if path.exists())
 
     conf = json.loads(conf_path.read_text())
     try:
