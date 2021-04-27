@@ -498,9 +498,27 @@ class OSCCall(JsonApiCall):
 
     def get_parameters(self, data, call):
         parameters = {}
+        auth = data.pop('authentication_method', 'accesskey')
+        if auth not in {'accesskey', 'password'}:
+            raise RuntimeError('Bad authentication method {}'.format(auth))
+        if auth == 'password':
+            try:
+                parameters.update({
+		    'Login': data.pop('login'),
+		    'Password': data.pop('password'),
+		})
+            except KeyError:
+                raise RuntimeError('Missing login and/or password, yet '
+                                   'password authentication has been '
+                                   'required')
+
         for k, v in data.items():
             self.format_data(parameters, k, v)
-        return parameters
+
+        return {
+	    'AuthenticationMethod': auth,
+	    **parameters
+	}
 
     def format_data(self, parameters, key, value):
         if '.' in key:
