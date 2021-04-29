@@ -293,10 +293,7 @@ class ApiCall(object):
             )
         )
 
-
-class FcuCall(ApiCall):
-    API_NAME = 'fcu'
-
+class XmlApiCall(ApiCall):
     def get_response(self, http_response):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
@@ -307,7 +304,11 @@ class FcuCall(ApiCall):
         return response
 
 
-class LbuCall(FcuCall):
+class FcuCall(XmlApiCall):
+    API_NAME = 'fcu'
+
+
+class LbuCall(XmlApiCall):
     API_NAME = 'lbu'
 
     def get_parameters(self, data, prefix=''):
@@ -331,7 +332,7 @@ class LbuCall(FcuCall):
             return {prefix: str(data)}
 
 
-class EimCall(FcuCall):
+class EimCall(XmlApiCall):
     API_NAME = 'eim'
 
     def get_parameters(self, data):
