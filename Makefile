@@ -11,7 +11,8 @@ test: .venv/ok
 	( \
 	. .venv/bin/activate && \
 	pylint --rcfile=pylint_py3.conf osc_sdk && \
-	bandit -c bandit.conf -r osc_sdk )
+	bandit -c bandit.conf -r osc_sdk && \
+	./tests/_run )
 
 .venv/ok:
 	( \
