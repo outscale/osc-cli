@@ -7,10 +7,11 @@ help:
 	@echo "- test: run all tests"
 	@echo "- test-pylint: check code with pylint"
 	@echo "- test-bandit: security check with bandit"
+	@echo "- test-int: run integration tests"
 	@echo "- clean: clean temp files, venv, etc"
 
 .PHONY: test
-test: clean test-pylint test-bandit build
+test: clean test-pylint test-bandit test-int build
 	@echo "All tests OK"
 
 .PHONY: test-pylint
@@ -20,6 +21,10 @@ test-pylint: .venv/ok
 .PHONY: test-bandit
 test-bandit: .venv/ok
 	@./tests/test_bandit.sh
+
+.PHONY: test-int
+test-int: .venv/ok
+	./tests/test_int.sh
 
 .PHONY: build
 build: .venv/ok
