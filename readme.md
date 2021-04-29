@@ -33,7 +33,8 @@ pip install -e .
 
 ## Configure osc-cli
 
-The CLI requires a configuration file in `~/.osc_sdk/config.json` The content must be a JSON whose contents look like this:
+The CLI requires a configuration file in `~/.osc/config.json` The content must be a JSON whose contents look like this:
+/!\ the old configuration path using `.osc_sdk` folder is **deprecated**. Please use the new one with `.osc`.
 ```json
 {"default":
     {"access_key": "MYACCESSKEY",
