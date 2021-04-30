@@ -7,7 +7,7 @@ import pathlib
 import re
 import urllib
 import defusedxml.ElementTree as ET
-
+import base64
 import fire
 import requests
 import xmltodict
@@ -21,9 +21,10 @@ CONF_PATHS = [
     pathlib.Path.home() / CONFIGURATION_FOLDER_DEPRECATED / CONFIGURATION_FILE,
 ]
 DEFAULT_METHOD = 'POST'
-DEFAULT_PROFILE = None
+DEFAULT_PROFILE = 'default'
 DEFAULT_REGION = 'eu-west-2'
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
+DEFAULT_AUTHENTICATION_METHOD = 'accesskey'
 METHODS_SUPPORTED = ['GET', 'POST']
 SDK_VERSION = '1.5'
 SSL_VERIFY = True
@@ -106,16 +107,25 @@ class ApiCall(object):
     SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
     SIG_TYPE = 'AWS4'
 
-    def __init__(self, **kwargs):
-        self.method = kwargs.pop('method', DEFAULT_METHOD)
-        self.access_key = kwargs.pop('access_key')
-        self.secret_key = kwargs.pop('secret_key')
-        self.version = kwargs.pop('version', DEFAULT_VERSION)
-        self.protocol = 'https' if kwargs.pop('https', None) else 'http'
-        self.region = kwargs.pop('region_name', DEFAULT_REGION)
-        self.ssl_verify = kwargs.pop('ssl_verify', SSL_VERIFY)
-        self.client_certificate = kwargs.get('client_certificate')
-        endpoint, host = (kwargs.get(x) for x in ['endpoint', 'host'])
+    def __init__(self, profile=DEFAULT_PROFILE,
+                 login=None, password=None,
+                 authentication_method=DEFAULT_AUTHENTICATION_METHOD):
+        self.setup_profile_options(profile)
+        self.setup_cmd_options(login, password, authentication_method)
+        self.check_options()
+
+    def setup_profile_options(self, profile):
+        conf = get_conf(profile)
+        self.method = conf.pop('method', DEFAULT_METHOD)
+        self.access_key = conf.pop('access_key', None)
+        self.secret_key = conf.pop('secret_key', None)
+        self.version = conf.pop('version', DEFAULT_VERSION)
+        self.protocol = 'https' if conf.pop('https', None) else 'http'
+        self.region = conf.pop('region_name', DEFAULT_REGION)
+        self.ssl_verify = conf.pop('ssl_verify', SSL_VERIFY)
+        self.client_certificate = conf.get('client_certificate')
+        endpoint = conf.get('endpoint')
+        host = conf.get('host')
         if endpoint:
             self.endpoint = endpoint
         elif host:
@@ -125,6 +135,25 @@ class ApiCall(object):
         # These wil be set in _set_datestamp
         self.date = None
         self.datestamp = None
+
+    def setup_cmd_options(self, login, password, authentication_method):
+        self.authentication_method = authentication_method
+        self.login = login
+        self.password = password
+
+    def check_options(self):
+        if self.authentication_method not in ['accesskey', 'password']:
+            raise RuntimeError('Unsupported authentication method (accesskey or password)')
+        if self.authentication_method == 'accesskey':
+            if self.access_key == None:
+                RuntimeError('Missing Access Key for authentication')
+            if self.secret_key == None:
+                RuntimeError('Missing Secret Key for authentication')
+        if self.authentication_method == 'password':
+            if self.login == None:
+                RuntimeError('Missing login for authentication')
+            if self.password == None:
+                RuntimeError('Missing password for authentication')
 
     @property
     def endpoint(self):
@@ -199,6 +228,13 @@ class ApiCall(object):
                 signature)
         )
 
+    def get_password_params(self):
+        return {
+            'AuthenticationMethod': 'password',
+            'Login': self.login,
+            'Password': self.password
+        }
+
     def get_response(self, request):
         raise NotImplementedError
 
@@ -226,6 +262,10 @@ class ApiCall(object):
 
         # Calculate request params
         request_params = self.get_parameters(data=kwargs)
+
+        if self.authentication_method == "password":
+            request_params.update(self.get_password_params())
+
         request_params['Action'] = call
         if 'Version' not in request_params:
             request_params['Version'] = self.version
@@ -271,16 +311,12 @@ class ApiCall(object):
                 payload_hash,
             ]
         )
-
-        authorization_header = self.get_authorization_header(
-            canonical_request,
-            signed_headers,
-        )
-
-        headers.update({
-            'Authorization': authorization_header,
-            'User-agent': USER_AGENT,
-        })
+        headers.update({'User-agent': USER_AGENT})
+        if self.authentication_method == "accesskey":
+            headers.update({'Authorization': self.get_authorization_header(
+                canonical_request,
+                signed_headers,
+            )})
 
         self.response = self.get_response(
             requests.request(
@@ -376,6 +412,10 @@ class JsonApiCall(ApiCall):
         self._set_datestamp()
 
         request_params = self.get_parameters(kwargs, call)
+
+        if self.authentication_method == "password":
+            request_params.update(self.get_password_params())
+
         json_params = json.dumps(request_params)
 
         target = '.'.join([self.SERVICE, call])
@@ -394,10 +434,7 @@ class JsonApiCall(ApiCall):
             ]
         )
 
-        if (
-            not request_params.get('AuthenticationMethod')
-            or request_params['AuthenticationMethod'] == 'accesskey'
-        ):
+        if self.authentication_method == 'accesskey':
             headers['Authorization'] = self.get_authorization_header(
                 canonical_request,
                 signed_headers,
@@ -422,24 +459,13 @@ class IcuCall(JsonApiCall):
     FILTERS_VALUES_STR = '^Filters.%s.Values.[0-9]*$'
 
     def get_parameters(self, data, call):
-        auth = data.pop('authentication_method', 'accesskey')
-        if auth not in {'accesskey', 'password'}:
-            raise RuntimeError('Bad authentication method {}'.format(auth))
-        if auth == 'password':
-            try:
-                data.update({
-                    'Login': data.pop('login'),
-                    'Password': data.pop('password'),
-                })
-            except KeyError:
-                raise RuntimeError('Missing login and/or password, yet '
-                                   'password authentication has been '
-                                   'required')
+        # Specific to Icu
+        if self.authentication_method == 'accesskey':
+            data.update({'AuthenticationMethod': 'accesskey'})
 
         filters = self.get_filters(data)
         data = {k: v for k, v in data.items() if not k.startswith('Filters.')}
         return {'Action': call,
-                'AuthenticationMethod': auth,
                 'Filters': filters,
                 'Version': self.version,
                 **data}
@@ -511,6 +537,19 @@ class OSCCall(JsonApiCall):
     def get_url(self, call, request_params=None):
         return '/'.join([self.endpoint, self.get_canonical_uri(call)])
 
+    def get_password_params(self):
+        # Don't put any auth parameters in body
+        return {}
+
+    def build_basic_auth(self):
+        if self.authentication_method == "password":
+            creds = "{}:{}".format(self.login, self.password)
+            basic_auth = "Basic {}".format(base64.urlsafe_b64encode(creds.encode('utf-8')).decode('utf-8'))
+            return {
+                'Authorization': basic_auth
+            }
+        return {}
+
     def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-osc-date;x-osc-target'
         canonical_headers = (
@@ -524,6 +563,8 @@ class OSCCall(JsonApiCall):
             'X-Osc-Date': self.date,
             'x-osc-target': target,
         }
+
+        headers.update(self.build_basic_auth())
         return signed_headers, canonical_headers, headers
 
 
@@ -541,7 +582,8 @@ def get_conf(profile):
         raise RuntimeError('Profile {} not found in configuration file'.format(profile))
 
 
-def api_connect(service, call, profile='default', *args, **kwargs):
+def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=None,
+                authentication_method=DEFAULT_AUTHENTICATION_METHOD, *args, **kwargs):
     calls = {
         'api': OSCCall,
         'directlink': DirectLinkCall,
@@ -551,8 +593,7 @@ def api_connect(service, call, profile='default', *args, **kwargs):
         'lbu': LbuCall,
         'okms': OKMSCall,
     }
-    conf = get_conf(profile)
-    handler = calls[service](**conf)
+    handler = calls[service](profile, login, password, authentication_method)
     handler.make_request(call, *args, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
