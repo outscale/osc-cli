@@ -7,7 +7,7 @@ import pathlib
 import re
 import urllib
 import defusedxml.ElementTree as ET
-
+import sys
 import fire
 import requests
 import xmltodict
@@ -33,6 +33,9 @@ USER_AGENT = 'osc_sdk ' + SDK_VERSION
 
 logger = logging.getLogger('osc_sdk')
 
+def abort(error_message):
+    logger.error(error_message)
+    sys.exit(1)
 
 class OscApiException(Exception):
 
@@ -141,12 +144,12 @@ class ApiCall(object):
 
     def check_options(self):
         if self.authentication_method not in ['accesskey', 'password']:
-            raise RuntimeError('Unsupported authentication method (accesskey or password)')
+            abort('Unsupported authentication method (accesskey or password)')
         if self.authentication_method == 'password':
             if self.login == None:
-                RuntimeError('Missing login for authentication')
+                abort('Missing login for authentication')
             if self.password == None:
-                RuntimeError('Missing password for authentication')
+                abort('Missing password for authentication')
 
     @property
     def endpoint(self):
