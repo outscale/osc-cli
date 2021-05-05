@@ -11,6 +11,8 @@ import sys
 import fire
 import requests
 import xmltodict
+import os
+import stat
 
 CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
@@ -25,11 +27,15 @@ DEFAULT_PROFILE = 'default'
 DEFAULT_REGION = 'eu-west-2'
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
 DEFAULT_AUTHENTICATION_METHOD = 'accesskey'
+# Manually manage tmp file as we want to find it between process instanciations without deletion
+DEFAULT_TMP_DIR = '/tmp' # nosec
+DEFAULT_EPHEMERAL_AK_DURATION_S = 12 * 60 * 60 # Default 12h
 METHODS_SUPPORTED = ['GET', 'POST']
 SDK_VERSION = '1.5'
 SSL_VERIFY = True
 SUCCESS_CODES = [200, 201, 202, 203, 204]
 USER_AGENT = 'osc_sdk ' + SDK_VERSION
+
 
 logger = logging.getLogger('osc_sdk')
 
@@ -110,12 +116,14 @@ class ApiCall(object):
     SIG_ALGORITHM = 'AWS4-HMAC-SHA256'
     SIG_TYPE = 'AWS4'
 
-    def __init__(self, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD):
+    def __init__(self, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S):
         self.setup_profile_options(profile)
-        self.setup_cmd_options(login, password, authentication_method)
+        self.setup_cmd_options(login, password, authentication_method, ephemeral_ak_duration)
         self.check_options()
+        self.init_ephemeral_auth()
 
     def setup_profile_options(self, profile):
+        self.profile_name = profile
         conf = get_conf(profile)
         self.method = conf.pop('method', DEFAULT_METHOD)
         self.access_key = conf.pop('access_key', None)
@@ -125,6 +133,7 @@ class ApiCall(object):
         self.region = conf.pop('region_name', DEFAULT_REGION)
         self.ssl_verify = conf.pop('ssl_verify', SSL_VERIFY)
         self.client_certificate = conf.get('client_certificate')
+        self.tmp_dir = DEFAULT_TMP_DIR
         endpoint = conf.get('endpoint')
         host = conf.get('host')
         if endpoint:
@@ -137,14 +146,15 @@ class ApiCall(object):
         self.date = None
         self.datestamp = None
 
-    def setup_cmd_options(self, login, password, authentication_method):
-        self.authentication_method = authentication_method
+    def setup_cmd_options(self, login, password, authentication_method, ephemeral_ak_duration):
         self.login = login
         self.password = password
+        self.authentication_method = authentication_method
+        self.ephemeral_ak_duration = ephemeral_ak_duration
 
     def check_options(self):
-        if self.authentication_method not in ['accesskey', 'password']:
-            abort('Unsupported authentication method (accesskey or password)')
+        if self.authentication_method not in ['accesskey', 'password', 'ephemeral']:
+            abort('Unsupported authentication method (accesskey, password or ephemeral)')
         if self.authentication_method == 'accesskey':
             if self.access_key == None:
                 abort('Missing Access Key for authentication')
@@ -155,6 +165,115 @@ class ApiCall(object):
                 abort('Missing login for authentication')
             if self.password == None:
                 abort('Missing password for authentication')
+
+    def init_ephemeral_auth(self):
+        if self.authentication_method != 'ephemeral':
+            return
+        if not self.ephemeral_auth_file_get():
+            logger.info("Ephemeral key not available, generating one...")
+            if not self.ephemeral_auth_file_init():
+                abort('Cannot initiate ephemeral authentication')
+
+    def ephemeral_auth_file_path(self):
+        uid = str(os.getuid())
+        file_name = 'osc-cli_' + uid + '_' + self.profile_name + '.json'
+        return os.path.join(self.tmp_dir, file_name)
+
+    def ephemeral_auth_file_get(self):
+        path = self.ephemeral_auth_file_path()
+        try:
+            file_stat = os.stat(path)
+
+            # Does file is owned by the same uid ?
+            if file_stat.st_uid != os.getuid():
+                logger.error("Ephemeral temp file %s does belong to user", path)
+                return False
+
+            # Is file's mode greater than 600 ?
+            if file_stat.st_mode & 0o177 > 0:
+                logger.error("Ephemeral temp file %s has extented rights", path)
+                return False
+
+            # Finally, get file's content
+            f = open(path, "r")
+            j = json.load(f)
+            f.close()
+            ak = j.get("access_key")
+            sk = j.get("secret_key")
+            ed = j.get("expiration_date")
+            if ak is None or sk is None or ed is None:
+                return False
+            expiration_date = datetime.datetime.fromisoformat(ed)
+            now = datetime.datetime.now()
+            if expiration_date <= now:
+                logger.warning("Ephemeral Access Key has expired")
+                return False
+            self.access_key = ak
+            self.secret_key = sk
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def ephemeral_auth_file_init(self):
+        created, ak, sk, ed = self.ephemeral_auth_ak_create()
+        if not created:
+            logger.error("Cannot create ephemeral Access Key")
+            return False
+
+        try:
+            # Remove previously created file
+            # Prevents to use eventual elevated file permissions
+            self.ephemeral_auth_file_clean()
+
+            # Create file with correct permissions
+            path = self.ephemeral_auth_file_path()
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            mode = stat.S_IRUSR | stat.S_IWUSR # 600
+            f = os.fdopen(os.open(path, flags, mode), 'w')
+
+            auth_file_str = {
+                "access_key": ak,
+                "secret_key": sk,
+                "expiration_date": ed
+            }
+            json.dump(auth_file_str, f)
+        except Exception as e:
+            print(e)
+            logger.error("Cannot store ephemeral Access Key in %s", path)
+            return False
+
+        self.access_key = ak
+        self.secret_key = sk
+        return True
+
+    def ephemeral_auth_file_clean(self):
+        try:
+            os.remove(self.ephemeral_auth_file_path())
+        except OSError:
+            pass
+
+    def ephemeral_auth_ak_create(self):
+        res = False
+        ak = None
+        sk = None
+        ed = None
+
+        expiration_date = datetime.datetime.now() + datetime.timedelta(seconds=self.ephemeral_ak_duration)
+        try:
+            # TODO: create AK with Outscale API, instead, read first AK waiting for API fix
+            #call = OSCCall(profile=self.profile_name, login=self.login, password=self.password, authentication_method='password')
+            #r = call.make_request('CreateAccessKey', ExpirationDate=expiration_date.isoformat())
+            ed = "2705-10-27T16:40:27.864019"
+            call = IcuCall(profile=self.profile_name, login=self.login, password=self.password, authentication_method='password')
+            call.make_request('ListAccessKeys')
+            ak = call.response['accessKeys'][0]['accessKeyId']
+            call.make_request('GetAccessKey', AccessKeyId=ak)
+            sk = call.response['accessKey']['secretAccessKey']
+            res = True
+        except Exception  as e:
+            print(e)
+        return res, ak, sk, ed
 
     @property
     def endpoint(self):
@@ -314,22 +433,34 @@ class ApiCall(object):
             ]
         )
         headers.update({'User-agent': USER_AGENT})
-        if self.authentication_method == "accesskey":
+        if self.authentication_method in ['accesskey', 'ephemeral']:
             headers.update({'Authorization': self.get_authorization_header(
                 canonical_request,
                 signed_headers,
             )})
 
-        self.response = self.get_response(
-            requests.request(
-                cert=self.client_certificate,
-                data=request_params,
-                headers=headers,
-                method=self.method,
-                url=url,
-                verify=self.ssl_verify
-            )
+
+        res = requests.request(
+            cert=self.client_certificate,
+            data=request_params,
+            headers=headers,
+            method=self.method,
+            url=url,
+            verify=self.ssl_verify
         )
+
+        # If we get an authentication error at this point with ephemeral,
+        # this mean that either:
+        # 1/ Ephemeral Access Key has been manually removed from account or
+        # 2/ File containing ephemeral Access Key has been alterated
+        # In either case, ephemeral auth file is removed an request retried
+        if res.status_code == 403 and self.authentication_method == 'ephemeral':
+            logger.error("Invalid ephemeral Access Key")
+            self.ephemeral_auth_file_clean()
+            self.init_ephemeral_auth()
+            return self.make_request(call, args, kwargs)
+
+        self.response = self.get_response(res)
 
 class XmlApiCall(ApiCall):
     def get_response(self, http_response):
@@ -436,22 +567,35 @@ class JsonApiCall(ApiCall):
             ]
         )
 
-        if self.authentication_method == 'accesskey':
+        # TODO: refactor to avoid code duplication with mother-class
+
+        if self.authentication_method in ['accesskey', 'ephemeral']:
             headers['Authorization'] = self.get_authorization_header(
                 canonical_request,
                 signed_headers,
             )
 
-        self.response = self.get_response(
-            requests.request(
-                cert=self.client_certificate,
-                data=json_params,
-                headers=headers,
-                method=self.method,
-                url=self.get_url(call),
-                verify=self.ssl_verify,
-            )
+        res = requests.request(
+            cert=self.client_certificate,
+            data=json_params,
+            headers=headers,
+            method=self.method,
+            url=self.get_url(call),
+            verify=self.ssl_verify,
         )
+
+        # If we get an authentication error at this point with ephemeral,
+        # this mean that either:
+        # 1/ Ephemeral Access Key has been manually removed from account or
+        # 2/ File containing ephemeral Access Key has been alterated
+        # In either case, ephemeral auth file is removed an request retried
+        if res.status_code == 403 and self.authentication_method == 'ephemeral':
+            logger.error("Invalid ephemeral Access Key")
+            self.ephemeral_auth_file_clean()
+            self.init_ephemeral_auth()
+            return self.make_request(call, args, kwargs)
+
+        self.response = self.get_response(res)
 
 
 class IcuCall(JsonApiCall):
@@ -462,7 +606,7 @@ class IcuCall(JsonApiCall):
 
     def get_parameters(self, data, call):
         # Specific to Icu
-        if self.authentication_method == 'accesskey':
+        if self.authentication_method in ['accesskey', 'ephemeral']:
             data.update({'AuthenticationMethod': 'accesskey'})
 
         filters = self.get_filters(data)
@@ -569,7 +713,7 @@ def get_conf(profile):
         raise RuntimeError('Profile {} not found in configuration file'.format(profile))
 
 
-def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, *args, **kwargs):
+def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S, *args, **kwargs):
     calls = {
         'api': OSCCall,
         'directlink': DirectLinkCall,
@@ -579,14 +723,14 @@ def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=Non
         'lbu': LbuCall,
         'okms': OKMSCall,
     }
-    handler = calls[service](profile, login, password, authentication_method)
+    handler = calls[service](profile, login, password, authentication_method, ephemeral_ak_duration)
     handler.make_request(call, *args, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
 
 
 def main():
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.INFO)
     fire.Fire(api_connect)
 
 
