@@ -1,4 +1,4 @@
-## How to submit a contribution
+# How to submit a contribution
 
 Thank you for considering contributing to OSC-CLI.
 
@@ -17,7 +17,20 @@ something is a bug or not. We’ll help you figure it out.
 
 Use the same issue tracker to report problems with the documentation.
 
-## Pull Requests
+# Running tests
+
+Pre-requisites:
+- An Outscale account
+- At least 50 AccessKeys in your quota
+
+Setup:
+- Fill a valid `default` profile in `~/.osc/config.json`
+- `export OSC_TEST_LOGIN="your.login@mycompany.com"`
+- `export OSC_TEST_PASSWORD="MySecretPassword"`
+
+Finally, you can run `make test`
+
+# Pull Requests
 
 We’ll do our best to review your pull request (or “PR” for short) quickly.
 
