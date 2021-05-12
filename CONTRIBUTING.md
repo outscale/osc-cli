@@ -20,15 +20,19 @@ Use the same issue tracker to report problems with the documentation.
 # Running tests
 
 Pre-requisites:
-- An Outscale account
+- An Outscale account on eu-west-2 region
 - At least 10 AccessKeys in your quota
 
 Setup:
 - Fill a valid `default` profile in `~/.osc/config.json`
 - `export OSC_TEST_LOGIN="your.login@mycompany.com"`
 - `export OSC_TEST_PASSWORD="MySecretPassword"`
+- `export OSC_TEST_ACCESS_KEY="ASJOAEHDIOEXAMPLE"`
+- `export OSC_TEST_SECRET_KEY="ASJOAEHSDF4565D4F6D54F6D5F4F654DIOEXAMPLE"`
 
-Finally, you can run `make test`
+Warning: config files in `~/.osc/config.json` and `~/.osc_sdk/config.json` will be overwritten during tests. Make sure to backup them if needed.
+
+Finally, you can run `make test`.
 
 # Pull Requests
 
