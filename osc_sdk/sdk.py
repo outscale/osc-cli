@@ -19,10 +19,6 @@ CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
 CONFIGURATION_FOLDER = '.osc'
 CONFIGURATION_FOLDER_DEPRECATED = '.osc_sdk'
-CONF_PATHS = [
-    pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE,
-    pathlib.Path.home() / CONFIGURATION_FOLDER_DEPRECATED / CONFIGURATION_FILE,
-]
 DEFAULT_METHOD = 'POST'
 DEFAULT_PROFILE = 'default'
 DEFAULT_REGION = 'eu-west-2'
@@ -118,37 +114,96 @@ class ApiCall(object):
     SIG_TYPE = 'AWS4'
 
     def __init__(self, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S ,interactive=False):
-        self.setup_profile_options(profile)
-        self.setup_cmd_options(login, password, authentication_method, ephemeral_ak_duration, interactive)
+        self.response = None
+        self.date = None
+        self.datestamp = None
+        self.tmp_dir = DEFAULT_TMP_DIR
+
+        self.load_config_file(profile)
+        self.setup_cmd_options(profile, login, password, authentication_method, ephemeral_ak_duration, interactive)
         self.setup_interactive_options()
         self.check_options()
         self.init_ephemeral_auth()
 
-    def setup_profile_options(self, profile):
+    def load_config_file(self, profile):
+        conf_path = pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE
+        if conf_path.exists():
+            logger.info("loading config file %s", conf_path)
+            self.setup_profile_options(conf_path, profile)
+            return
+        conf_path_deprecated = pathlib.Path.home() / CONFIGURATION_FOLDER_DEPRECATED / CONFIGURATION_FILE
+        if conf_path_deprecated.exists():
+            logger.warning("loading deprecated config file %s", conf_path_deprecated)
+            self.setup_profile_options_deprecated(conf_path_deprecated, profile)
+            return
+        RuntimeError('No configuration file found in home folder')
+
+    def setup_profile_options(self, conf_path, profile):
+        profiles = json.loads(conf_path.read_text())
+        try:
+            conf = profiles[profile]
+        except KeyError:
+            raise RuntimeError('Profile {} not found in configuration file'.format(profile))
+
+        # From standard options
         self.profile_name = profile
-        conf = get_conf(profile)
-        self.method = conf.pop('method', DEFAULT_METHOD)
-        self.access_key = conf.pop('access_key', None)
-        self.secret_key = conf.pop('secret_key', None)
-        self.version = conf.pop('version', DEFAULT_VERSION)
-        self.protocol = 'https' if conf.pop('https', None) else 'http'
-        self.region = conf.pop('region_name', DEFAULT_REGION)
-        self.ssl_verify = conf.pop('ssl_verify', SSL_VERIFY)
+        self.access_key = conf.get('access_key')
+        self.secret_key = conf.get('secret_key')
+        x509_client_cert = conf.get('x509_client_cert')
+        x509_client_key = conf.get('x509_client_key')
+        self.client_certificate = (x509_client_cert, x509_client_key)
+        self.protocol = conf.get('protocol', 'https')
+        self.method = conf.get('method', DEFAULT_METHOD)
+        if isinstance(self.method, str):
+            self.method = self.method.upper()
+        self.region = conf.get('region', DEFAULT_REGION)
+        self.host = None
+        self.path = None
+        endpoints = conf.get('endpoints')
+        if isinstance(endpoints, dict):
+            endpoint = endpoints.get(self.API_NAME)
+            self.setup_host_path(endpoint)
+
+        # Additionnal specific osc-cli options
+        self.ssl_verify = conf.get('ssl_verify', SSL_VERIFY)
+        self.version = conf.get('version', DEFAULT_VERSION)
+
+    def setup_profile_options_deprecated(self, conf_path, profile):
+        conf = json.loads(conf_path.read_text())
+        try:
+            conf = conf[profile]
+        except KeyError:
+            raise RuntimeError('Profile {} not found in configuration file'.format(profile))
+        self.profile_name = profile
+        self.method = conf.get('method', DEFAULT_METHOD)
+        self.access_key = conf.get('access_key')
+        self.secret_key = conf.get('secret_key')
+        self.version = conf.get('version', DEFAULT_VERSION)
+        self.protocol = conf.get('protocol', 'https')
+        self.region = conf.get('region_name', DEFAULT_REGION)
+        self.ssl_verify = conf.get('ssl_verify', SSL_VERIFY)
         self.client_certificate = conf.get('client_certificate')
-        self.tmp_dir = DEFAULT_TMP_DIR
         endpoint = conf.get('endpoint')
+        self.setup_host_path(endpoint)
         host = conf.get('host')
-        if endpoint:
-            self.endpoint = endpoint
-        elif host:
-            self.endpoint = '.'.join([self.API_NAME, self.region, host])
+        if host and self.region:
+            self.path = ''
+            self.host = '{}.{}.{}'.format(self.API_NAME, self.region, host)
+        if self.API_NAME == "api":
+            self.path = '/api/v1'
 
-        self.response = None
-        # These wil be set in _set_datestamp
-        self.date = None
-        self.datestamp = None
+    def setup_host_path(self, endpoint):
+        self.host = None
+        self.path = None
+        if not isinstance(endpoint, str):
+            return
+        url = "{}://{}".format(self.method, endpoint)
+        p = urllib.parse.urlparse(url)
+        self.host = p.netloc
+        self.path = p.path
 
-    def setup_cmd_options(self, login, password, authentication_method, ephemeral_ak_duration, interactive):
+    def setup_cmd_options(self, profile, login, password, authentication_method, ephemeral_ak_duration, interactive):
+        self.profile = profile
         self.login = login
         self.password = password
         self.authentication_method = authentication_method
@@ -196,6 +251,10 @@ class ApiCall(object):
                 abort('Missing login for authentication')
             if self.password == None:
                 abort('Missing password for authentication')
+        if self.host == None or self.path == None:
+            abort('Endpoint is not configured')
+        if self.method not in METHODS_SUPPORTED:
+            abort('Method {} is not supported'.format(self.method))
 
     def init_ephemeral_auth(self):
         if self.authentication_method != 'ephemeral':
@@ -306,50 +365,20 @@ class ApiCall(object):
             print(e)
         return res, ak, sk, ed
 
-    @property
-    def endpoint(self):
-        return self.__endpoint
-
-    @property
-    def host(self):
-        return self.__host
-
-    @endpoint.setter
-    def endpoint(self, value):
-        parsed_url = urllib.parse.urlparse(value)
-        if parsed_url.scheme:
-            self.__endpoint = value
-            self.__host = parsed_url.netloc
-        else:
-            self.__endpoint = '{}://{}'.format(self.protocol, value)
-            self.__host = value
-
-    @property
-    def method(self):
-        return self._method
-
-    @method.setter
-    def method(self, method):
-        if method not in METHODS_SUPPORTED:
-            raise Exception(
-                'Wrong method {}. Supported: {}.'.format(method,
-                                                         METHODS_SUPPORTED)
-            )
-        self._method = method
 
     def _set_datestamp(self):
         date = datetime.datetime.utcnow()
         self.date = date.strftime('%Y%m%dT%H%M%SZ')
         self.datestamp = date.strftime('%Y%m%d')
 
-    def get_url(self, call, request_params=None):
-        value = self.endpoint
+    def get_url(self, action, request_params=None):
+        url = '{}://{}'.format(self.protocol, self.host)
         if self.method == 'GET':
-            value += '?{}'.format(request_params)
-        return value
+            url += '?{}'.format(request_params)
+        return url
 
-    def get_canonical_uri(self, call):
-        return CANONICAL_URI
+    def get_canonical_uri(self, action):
+        return '/'
 
     def get_authorization_header(self, canonical_request, signed_headers):
 
@@ -409,7 +438,7 @@ class ApiCall(object):
                 return {prefix: ''}
             return {prefix: str(data)}
 
-    def make_request(self, call, *args, **kwargs):
+    def make_request(self, action, *args, **kwargs):
         self._set_datestamp()
 
         # Calculate request params
@@ -418,13 +447,13 @@ class ApiCall(object):
         if self.authentication_method == "password":
             request_params.update(self.get_password_params())
 
-        request_params['Action'] = call
+        request_params['Action'] = action
         if 'Version' not in request_params:
             request_params['Version'] = self.version
         request_params = urllib.parse.urlencode(request_params)
 
         # Calculate URL before request_params value is modified
-        url = self.get_url(call, request_params)
+        url = self.get_url(action, request_params)
 
         if self.method == 'GET':
             headers = {
@@ -442,7 +471,7 @@ class ApiCall(object):
                 'x-amz-target':
                     '{}_{}.{}'.format(self.API_NAME,
                                       datetime.date.today().strftime('%Y%m%d'),
-                                      call),
+                                      action),
             }
 
             payload_hash = (
@@ -456,7 +485,7 @@ class ApiCall(object):
         canonical_request = '\n'.join(
             [
                 self.method,
-                self.get_canonical_uri(call),
+                self.get_canonical_uri(action),
                 canonical_params,
                 canonical_headers,
                 signed_headers,
@@ -489,9 +518,10 @@ class ApiCall(object):
             logger.error("Invalid ephemeral Access Key")
             self.ephemeral_auth_file_clean()
             self.init_ephemeral_auth()
-            return self.make_request(call, args, kwargs)
+            return self.make_request(action, args, kwargs)
 
         self.response = self.get_response(res)
+
 
 class XmlApiCall(ApiCall):
     def get_response(self, http_response):
@@ -547,7 +577,7 @@ class JsonApiCall(ApiCall):
     SERVICE = ''
     CONTENT_TYPE = 'application/x-amz-json-1.1'
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data, action):
         return data
 
     def get_response(self, http_response):
@@ -572,17 +602,17 @@ class JsonApiCall(ApiCall):
         }
         return signed_headers, canonical_headers, headers
 
-    def make_request(self, call, *args, **kwargs):
+    def make_request(self, action, *args, **kwargs):
         self._set_datestamp()
 
-        request_params = self.get_parameters(kwargs, call)
+        request_params = self.get_parameters(kwargs, action)
 
         if self.authentication_method == "password":
             request_params.update(self.get_password_params())
 
         json_params = json.dumps(request_params)
 
-        target = '.'.join([self.SERVICE, call])
+        target = '.'.join([self.SERVICE, action])
 
         signed_headers, canonical_headers, headers = self.build_headers(
             target, json_params)
@@ -590,7 +620,7 @@ class JsonApiCall(ApiCall):
         canonical_request = '\n'.join(
             [
                 'POST',
-                self.get_canonical_uri(call),
+                self.get_canonical_uri(action),
                 '',
                 canonical_headers,
                 signed_headers,
@@ -611,7 +641,7 @@ class JsonApiCall(ApiCall):
             data=json_params,
             headers=headers,
             method=self.method,
-            url=self.get_url(call),
+            url=self.get_url(action),
             verify=self.ssl_verify,
         )
 
@@ -624,7 +654,7 @@ class JsonApiCall(ApiCall):
             logger.error("Invalid ephemeral Access Key")
             self.ephemeral_auth_file_clean()
             self.init_ephemeral_auth()
-            return self.make_request(call, args, kwargs)
+            return self.make_request(action, args, kwargs)
 
         self.response = self.get_response(res)
 
@@ -635,14 +665,14 @@ class IcuCall(JsonApiCall):
     FILTERS_NAME_PATTERN = re.compile('^Filters.([0-9]*).Name$')
     FILTERS_VALUES_STR = '^Filters.%s.Values.[0-9]*$'
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data, action):
         # Specific to Icu
         if self.authentication_method in ['accesskey', 'ephemeral']:
             data.update({'AuthenticationMethod': 'accesskey'})
 
         filters = self.get_filters(data)
         data = {k: v for k, v in data.items() if not k.startswith('Filters.')}
-        return {'Action': call,
+        return {'Action': action,
                 'Filters': filters,
                 'Version': self.version,
                 **data}
@@ -677,6 +707,7 @@ class DirectLinkCall(JsonApiCall):
         return res
 
 
+
 class OKMSCall(JsonApiCall):
     API_NAME = 'kms'
     SERVICE = 'TrentService'
@@ -690,7 +721,7 @@ class OSCCall(JsonApiCall):
     SIG_TYPE = 'OSC4'
     SERVICE = 'OutscaleService'
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data, action):
         parameters = {}
         for k, v in data.items():
             self.format_data(parameters, k, v)
@@ -708,11 +739,25 @@ class OSCCall(JsonApiCall):
                 else value
             )
 
-    def get_canonical_uri(self, call):
-        return '/{}/latest/{}'.format(self.API_NAME, call)
+    def get_url(self, action, request_params=None):
+        url = '{}://{}'.format(self.protocol, self.host)
+        if isinstance(self.path, str) and len(self.path) > 0:
+            url += '{}'.format(self.path)
+        if isinstance(action, str) and len(action) > 0:
+            url += '/{}'.format(action)
+        if self.method == 'GET':
+            url += '?{}'.format(request_params)
+        return url
 
-    def get_url(self, call, request_params=None):
-        return '/'.join([self.endpoint, self.get_canonical_uri(call)])
+    def get_canonical_uri(self, action):
+        uri = ''
+        if isinstance(self.path, str) and len(self.path) > 0:
+            uri += '{}'.format(self.path)
+        if isinstance(action, str) and len(action) > 0:
+            uri += '/{}'.format(action)
+        if len(uri) == 0:
+            uri = '/'
+        return uri
 
     def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-osc-date;x-osc-target'
@@ -729,22 +774,7 @@ class OSCCall(JsonApiCall):
         }
         return signed_headers, canonical_headers, headers
 
-
-def get_conf(profile):
-    # Check which conf_path is used.
-    conf_path = next((path for path in CONF_PATHS if path.exists()), None)
-
-    if not conf_path:
-        raise RuntimeError('No configuration file found in home folder')
-
-    conf = json.loads(conf_path.read_text())
-    try:
-        return conf[profile]
-    except KeyError:
-        raise RuntimeError('Profile {} not found in configuration file'.format(profile))
-
-
-def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S, interactive=False, *args, **kwargs):
+def api_connect(service, action, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S, interactive=False, *args, **kwargs):
     calls = {
         'api': OSCCall,
         'directlink': DirectLinkCall,
@@ -755,7 +785,7 @@ def api_connect(service, call, profile=DEFAULT_PROFILE, login=None, password=Non
         'okms': OKMSCall,
     }
     handler = calls[service](profile, login, password, authentication_method, ephemeral_ak_duration, interactive)
-    handler.make_request(call, *args, **kwargs)
+    handler.make_request(action, *args, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
 
