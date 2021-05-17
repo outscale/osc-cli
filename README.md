@@ -43,6 +43,8 @@ mkdir -p ~/.osc
 cp config.basic.example.json ~/.osc/config.json
 ```
 
+See "Authentication" section for more details.
+
 Note: osc-cli still supports old configuration format located in `~/.osc_sdk/config.json` but will use `~/.osc/config.json` in priority.
 
 ## Usage
@@ -123,10 +125,44 @@ $ osc-cli api example --obj="['vol-12345678', 'vol-87654322']"    	# list
 
 ## Authentication
 
-You API crendentials are composed of an Access Key and a Secret Key located in `.osc/config.json`.
-You can list you access keys using your user and password:
-```bash
+osc-cli enable authentication in several ways:
+- Using an Access Key and Secret Key (default method)
+- Using an login and passphrase
+- Using an ephemeral Access Key
+
+### Authenticating using your Access Key and Secret Key
+
+This is the simplest use-case: create your Access Key and Secret Key either through [Cockpit interface](https://cockpit.outscale.com/) or through osc-cli.
+
+Creating your Access Key through osc-cli:
+```
+osc-cli icu CreateAccessKey --authentication-method=password --interactive
+```
+
+Once you have your Access Key, fill `access_key` and `secret_key` in `.osc/config.json`
+
+### Authenticating using your account login and passphrase
+
+Users can authenticate on Outscale API using their account login and passphrase for some specific API calls only.
+
+Examples:
+```
+osc-cli icu ListAccessKeys --authentication-method=password --interactive
 osc-cli icu ListAccessKeys --authentication-method=password --login youremail@company.com --password=Y0URpAssOrd
+```
+
+### Authenticating using an ephemeral Access Key
+
+ith `--authentication-method=ephemeral`, osc-cli will use a login/passphrase in order to create an ephemeral Access Key.
+Once created, it is used for current osc-cli process and stored in `/tmp/osc-cli_${UID}_${PROFILE}.json` for later use.
+Future osc-cli processes will use the stored ephemeral Access Key to authenticate.
+Once the ephemeral Access Key invalid, a new ephemeral Access Key is created and stored.
+
+With `--ephemeral-ak-duration` option, user can choose ephemeral Access Key lifetime in seconds. Default is 12h.
+
+Example:
+```
+osc-cli icu ReadVolumes --authentication-method=ephemeral --interactive
 ```
 
 ## Contributing
