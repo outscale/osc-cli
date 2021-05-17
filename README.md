@@ -35,46 +35,15 @@ pip install -e .
 
 ## Configure osc-cli
 
-The CLI requires a configuration file in `~/.osc/config.json` The content must be a JSON whose contents look like this:
-/!\ the old configuration path using `.osc_sdk` folder is **deprecated**. Please use the new one with `.osc`.
-```json
-{"default":
-    {"access_key": "MYACCESSKEY",
-     "secret_key": "MYSECRETKEY",
-     "host": "outscale.com",
-     "https": true,
-     "method": "POST",
-     "region_name": "eu-west-2"
-    },
-  "us":
-    {"access_key": "MYACCESSKEY",
-     "secret_key": "MYSECRETKEY",
-     "host": "outscale.com",
-     "https": true,
-     "method": "POST",
-     "region_name": "us-east-2"
-    }
-}
-```
-You can add several profiles for different regions or users.
+Osc-cli configuration is located in `~/.osc/config.json`.
 
-Optional parameters can be applied to each profile :
-* client_certificate: if you need additional security, your pem must include your private key and your certificate
-* version: if you want to query another version of the API
-
-```json
-{"default":
-    {"access_key": "MYACCESSKEY",
-     "secret_key": "MYSECRETKEY",
-     "client_certificate" : "path_to_your_pem",
-     "host": "outscale.com",
-     "https": true,
-     "method": "POST",
-     "region_name": "eu-west-2",
-     "version": "2018-11-19"
-    }
-}
+Just copy sample file and customize it
 ```
+mkdir -p ~/.osc
+cp config.basic.example.json ~/.osc/config.json
+```
+
+Note: osc-cli still supports old configuration format located in `~/.osc_sdk/config.json` but will use `~/.osc/config.json` in priority.
 
 ## Usage
 
@@ -154,11 +123,12 @@ $ osc-cli api example --obj="['vol-12345678', 'vol-87654322']"    	# list
 
 ## Authentication
 
-You API crendentials are composed of an Access Key and a Secret Key located in `.osc_sdk/config.json`.
+You API crendentials are composed of an Access Key and a Secret Key located in `.osc/config.json`.
 You can list you access keys using your user and password:
 ```bash
 osc-cli icu ListAccessKeys --authentication-method=password --login youremail@company.com --password=Y0URpAssOrd
 ```
+
 ## Contributing
 OSC-CLI is an **open source software** licensed under **BSD-3-Clause.**
 

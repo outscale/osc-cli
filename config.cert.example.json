@@ -1,0 +1,19 @@
+{
+    "default": {
+	"access_key": "DS564D65S4DEXAMPLE",
+	"secret_key": "8D4G684SD65S4DD5F46D54F6D54F6D5FEXAMPLE",
+	"x509_client_cert": "/path/to/cert",
+	"x509_client_key": "/path/to/key",
+	"region": "eu-west-2",
+	"endpoints": {
+	    "api": "api.eu-west-2.outscale.com/api/v1",
+	    "fcu": "fcu.eu-west-2.outscale.com",
+	    "lbu": "lbu.eu-west-2.outscale.com",
+	    "eim": "eim.eu-west-2.outscale.com",
+	    "icu": "icu.eu-west-2.outscale.com",
+	    "directlink": "directlink.eu-west-2.outscale.com",
+	    "oos": "oos.eu-west-2.outscale.com"
+	}
+    }
+}
+
