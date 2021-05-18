@@ -796,4 +796,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except OscApiException as e:
+        abort("{}".format(e))
+    except Exception as e:
+        abort("Unexpected error: {}".format(e))
