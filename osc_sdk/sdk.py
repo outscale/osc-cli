@@ -54,7 +54,7 @@ class OscApiException(Exception):
 
     def __str__(self):
         return (
-            f'Error --> status = {self.status_code}, '
+            f'status = {self.status_code}, '
             f'code = {self.error_code}, '
             f'{"code_type = " if self.code_type is not None else ""}'
             f'{self.code_type + ", " if self.code_type is not None else ""}'
