@@ -17,4 +17,9 @@ for t in *.sh ; do
     ./$t
 done
 
+cd $PROJECT_ROOT/tests/specific_tests/
+for t in *.sh ; do
+    ./$t
+done
+
 $PROJECT_ROOT/tests/clean_config_files.sh
