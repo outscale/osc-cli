@@ -14,6 +14,8 @@ import xmltodict
 import os
 import stat
 import getpass
+import M2Crypto
+import urllib3
 
 CANONICAL_URI = '/'
 CONFIGURATION_FILE = 'config.json'
@@ -149,9 +151,9 @@ class ApiCall(object):
         self.profile_name = profile
         self.access_key = conf.get('access_key')
         self.secret_key = conf.get('secret_key')
-        x509_client_cert = conf.get('x509_client_cert')
-        x509_client_key = conf.get('x509_client_key')
-        self.client_certificate = (x509_client_cert, x509_client_key)
+        self.x509_client_cert = conf.get('x509_client_cert')
+        self.x509_client_key = conf.get('x509_client_key')
+        self.client_certificate = (self.x509_client_cert, self.x509_client_key)
         self.protocol = conf.get('protocol', 'https')
         self.method = conf.get('method', DEFAULT_METHOD)
         if isinstance(self.method, str):
@@ -167,8 +169,14 @@ class ApiCall(object):
         # Additionnal specific osc-cli options
         self.ssl_verify = conf.get('ssl_verify', SSL_VERIFY)
         self.version = conf.get('version', DEFAULT_VERSION)
+        self.ssl_engine_id = conf.get('ssl_engine_id')
+        self.ssl_engine_path = conf.get('ssl_engine_path')
+        self.ssl_module_path = conf.get('ssl_module_path')
 
     def setup_profile_options_deprecated(self, conf_path, profile):
+        self.ssl_engine_id = None
+        self.ssl_engine_path = None
+        self.ssl_module_path = None
         conf = json.loads(conf_path.read_text())
         try:
             conf = conf[profile]
@@ -255,6 +263,9 @@ class ApiCall(object):
             abort('Endpoint is not configured')
         if self.method not in METHODS_SUPPORTED:
             abort('Method {} is not supported'.format(self.method))
+        if self.ssl_engine_id:
+            if self.protocol != 'https':
+                abort('Protocol must be "https" with ssl_engine_id')
 
     def init_ephemeral_auth(self):
         if self.authentication_method != 'ephemeral':
@@ -416,7 +427,7 @@ class ApiCall(object):
             'Password': self.password
         }
 
-    def get_response(self, request):
+    def get_response(self, request, raw_content):
         raise NotImplementedError
 
     def get_parameters(self, data, prefix=''):
@@ -499,8 +510,12 @@ class ApiCall(object):
                 signed_headers,
             )})
 
+        request = requests.Session()
+        if self.ssl_engine_id:
+            adapter = HttpsAdapter(self.ssl_engine_id, self.ssl_engine_path, self.ssl_module_path)
+            request.mount("https://", adapter)
 
-        res = requests.request(
+        res = request.request(
             cert=self.client_certificate,
             data=request_params,
             headers=headers,
@@ -520,17 +535,31 @@ class ApiCall(object):
             self.init_ephemeral_auth()
             return self.make_request(action, args, kwargs)
 
-        self.response = self.get_response(res)
+        raw_content = self.get_raw_content(res)
+        self.response = self.get_response(res, raw_content)
+
+    def get_raw_content(self, res):
+        raw_content = None
+        if res.text is not None and len(res.text) > 0:
+            raw_content = res.text
+        elif res.content is not None and len(res.content) > 0:
+            raw_content = res.content
+        elif res.raw.data is not None and len(res.raw.data) > 0:
+            encoding = res.encoding
+            if encoding == None:
+                encoding = "utf-8"
+            raw_content = res.raw.data.decode(encoding)
+        return raw_content
 
 
 class XmlApiCall(ApiCall):
-    def get_response(self, http_response):
+    def get_response(self, http_response, raw_content):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
         try:
-            response = xmltodict.parse(http_response.content)
+            response = xmltodict.parse(raw_content)
         except Exception:
-            response = "Unable to parse response: '{}'".format(http_response.text)
+            response = "Unable to parse response: '{}'".format(raw_content)
         return response
 
 
@@ -580,11 +609,10 @@ class JsonApiCall(ApiCall):
     def get_parameters(self, data, action):
         return data
 
-    def get_response(self, http_response):
+    def get_response(self, http_response, raw_content):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
-
-        return json.loads(http_response.text)
+        return json.loads(raw_content)
 
     def build_headers(self, target, json_parameters):
         signed_headers = 'host;x-amz-date;x-amz-target'
@@ -636,7 +664,12 @@ class JsonApiCall(ApiCall):
                 signed_headers,
             )
 
-        res = requests.request(
+        request = requests.Session()
+        if self.ssl_engine_id:
+            adapter = HttpsAdapter(self.ssl_engine_id, self.ssl_engine_path, self.ssl_module_path)
+            request.mount("https://", adapter)
+
+        res = request.request(
             cert=self.client_certificate,
             data=json_params,
             headers=headers,
@@ -656,7 +689,8 @@ class JsonApiCall(ApiCall):
             self.init_ephemeral_auth()
             return self.make_request(action, args, kwargs)
 
-        self.response = self.get_response(res)
+        raw_content = self.get_raw_content(res)
+        self.response = self.get_response(res, raw_content)
 
 
 class IcuCall(JsonApiCall):
@@ -698,14 +732,13 @@ class DirectLinkCall(JsonApiCall):
     API_NAME = 'directlink'
     SERVICE = 'OvertureService'
 
-    def get_response(self, http_response):
+    def get_response(self, http_response, raw_content):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
 
-        res = json.loads(http_response.text)
+        res = json.loads(raw_content)
         res['requestid'] = http_response.headers['x-amz-requestid']
         return res
-
 
 
 class OKMSCall(JsonApiCall):
@@ -773,6 +806,76 @@ class OSCCall(JsonApiCall):
             'x-osc-target': target,
         }
         return signed_headers, canonical_headers, headers
+
+
+class HttpsAdapter(requests.adapters.BaseAdapter):
+    """
+    Adapter to use an external SSL engine (thanks to M2Crypto)
+    https://docs.python-requests.org/en/master/_modules/requests/adapters/
+    """
+
+    def __init__(self, ssl_engine_id, ssl_engine_path, ssl_module_path):
+        super(HttpsAdapter, self).__init__()
+        self.ssl_engine_id = ssl_engine_id
+        self.ssl_engine_path = ssl_engine_path
+        self.ssl_module_path = ssl_module_path
+
+    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
+
+        url_parse = urllib.parse.urlparse(request.url)
+        url_path_query = url_parse.path
+        if url_parse.query:
+            url_path_query += "?" + url_parse.query
+
+        cert_path = None
+        key_path = None
+        try:
+            (cert_path, key_path) = cert
+        except ValueError:
+            raise ValueError("Certificate and/or private key not configured")
+
+        ssl_context = self.init_ssl_context(verify=verify, cert_path=cert_path, key_path=key_path)
+        connection = M2Crypto.httpslib.HTTPSConnection(host=url_parse.netloc, ssl_context=ssl_context)
+        connection.request(method=request.method, url=url_path_query, body=request.body, headers=request.headers)
+
+        resp = urllib3.response.HTTPResponse.from_httplib(connection.getresponse())
+        response = requests.models.Response()
+        response.connection = self
+        response.url = url_parse.geturl()
+        response.headers = requests.structures.CaseInsensitiveDict(getattr(resp, "headers", {}))
+        response.reason = getattr(resp, "reason", None)
+        response.status_code = getattr(resp, "status", None)
+        response.request = request
+        response.raw = resp
+        response.encoding = requests.utils.get_encoding_from_headers(response.headers)
+        return response
+
+    def close(self):
+        pass
+
+    def init_ssl_context(self, verify, cert_path, key_path):
+        # More details on https://gitlab.com/m2crypto/m2crypto/-/blob/master/src/M2Crypto/SSL/Context.py
+        ssl_context = M2Crypto.SSL.Context()
+        if not verify:
+            ssl_context.set_allow_unknown_ca(True)
+
+        ssl_engine = self.init_ssl_engine()
+        cert = ssl_engine.load_certificate(cert_path)
+        key = ssl_engine.load_private_key(key_path)
+        M2Crypto.m2.ssl_ctx_use_x509(ssl_context.ctx, cert.x509) # pylint: disable=E1101 # is part of swig
+        M2Crypto.m2.ssl_ctx_use_pkey_privkey(ssl_context.ctx, key.pkey) # pylint: disable=E1101 # is part of swig
+        return ssl_context
+
+    def init_ssl_engine(self):
+        if self.ssl_engine_path is not None:
+            M2Crypto.Engine.load_dynamic_engine(self.ssl_engine_id, self.ssl_engine_path)
+        ssl_engine = M2Crypto.Engine.Engine(self.ssl_engine_id)
+        if self.ssl_module_path is not None:
+            ssl_engine.ctrl_cmd_string("MODULE_PATH", self.ssl_module_path)
+
+        M2Crypto.m2.engine_init(M2Crypto.m2.engine_by_id(self.ssl_engine_id)) # pylint: disable=E1101 # is part of swig
+        return ssl_engine
+
 
 def api_connect(service, action, profile=DEFAULT_PROFILE, login=None, password=None, authentication_method=DEFAULT_AUTHENTICATION_METHOD, ephemeral_ak_duration=DEFAULT_EPHEMERAL_AK_DURATION_S, interactive=False, *args, **kwargs):
     calls = {

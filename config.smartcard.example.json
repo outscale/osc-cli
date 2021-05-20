@@ -1,0 +1,22 @@
+{
+    "default": {
+	"access_key": "DS564D65S4DEXAMPLE",
+	"secret_key": "8D4G684SD65S4DD5F46D54F6D54F6D5FEXAMPLE",
+	"x509_client_cert": "pkcs11:token=token0;type=cert;object=osc.cert",
+	"x509_client_key": "pkcs11:token=token0;type=private;object=osc.key;pin-value=1234",
+	"ssl_engine_id": "pkcs11",
+	"ssl_engine_path": "/usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so",
+	"ssl_module_path": "/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so",
+	"region": "eu-west-2",
+	"endpoints": {
+	    "api": "api.eu-west-2.outscale.com/api/v1",
+	    "fcu": "fcu.eu-west-2.outscale.com",
+	    "lbu": "lbu.eu-west-2.outscale.com",
+	    "eim": "eim.eu-west-2.outscale.com",
+	    "icu": "icu.eu-west-2.outscale.com",
+	    "directlink": "directlink.eu-west-2.outscale.com",
+	    "oos": "oos.eu-west-2.outscale.com"
+	}
+    }
+}
+

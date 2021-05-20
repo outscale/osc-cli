@@ -164,6 +164,15 @@ Example:
 ```
 osc-cli icu ReadVolumes --authentication-method=ephemeral --interactive
 ```
+## Client certificates
+
+Some users may want to setup their account in order to limit API access from specific IP or specific CA. Check [Api Access Rules](https://wiki.outscale.net/display/EN/About+API+Access+Rules) for more details. If you choose to use a client certificate with osc-cli, you can setup this by either using local cert and key files or by using a smart card.
+
+For client certificates as files, you will have to configure `x509_client_cert` and `x509_client_key` options in your profile. For smart card usage, you will also have to fill `ssl_engine_id` and you optionally specify `ssl_engine_path` and `ssl_module_path` options.
+
+Check [`config.cert.example.json`](config.cert.example.json) and [`config.smartcard.example.json`](config.smartcard.example.json).
+
+Note that client certificate configuration can be combined with any authentication method (see above).
 
 ## Contributing
 OSC-CLI is an **open source software** licensed under **BSD-3-Clause.**

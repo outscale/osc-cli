@@ -25,8 +25,11 @@ setup(
     entry_points={"console_scripts": ["osc-cli = osc_sdk.sdk:main"]},
     install_requires=[
         "setuptools",
-        "fire==0.1.3",
-        "requests==2.21.0",
         "xmltodict==0.11.0",
+        "fire==0.4.0",
+        "requests==2.25.1",
+        "defusedxml==0.7.1",
+        "M2Crypto==0.37.1",
+        "urllib3==1.26.5",
     ],
 )
