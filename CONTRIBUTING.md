@@ -22,6 +22,7 @@ Use the same issue tracker to report problems with the documentation.
 Pre-requisites:
 - An Outscale account on eu-west-2 region
 - At least 10 AccessKeys in your quota
+- Have `softhsm`, `pkcs11-tool` and `openssl` installed on a Linux machine (smartcard tests)
 
 Setup:
 - Fill a valid `default` profile in `~/.osc/config.json`
@@ -29,6 +30,8 @@ Setup:
 - `export OSC_TEST_PASSWORD="MySecretPassword"`
 - `export OSC_TEST_ACCESS_KEY="ASJOAEHDIOEXAMPLE"`
 - `export OSC_TEST_SECRET_KEY="ASJOAEHSDF4565D4F6D54F6D5F4F654DIOEXAMPLE"`
+- `export OSC_TEST_SMARTCARD_SOFTHSM=true"`
+- `export OSC_TEST_SMARTCARD_YUBIKEY=false"`
 
 Warning: config files in `~/.osc/config.json` and `~/.osc_sdk/config.json` will be overwritten during tests. Make sure to backup them if needed.
 
