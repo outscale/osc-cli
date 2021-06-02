@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 PROJECT_ROOT=$(cd "$(dirname $0)/.." && pwd)
+
+set -o allexport
+source $PROJECT_ROOT/tests/config.env &> /dev/null || true
+set +o allexport
+
+$PROJECT_ROOT/tests/check_test_config.sh
 . $PROJECT_ROOT/.venv/bin/activate
 
 $PROJECT_ROOT/tests/clean_config_files.sh
