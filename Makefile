@@ -8,6 +8,7 @@ help:
 	@echo "- test-pylint: check code with pylint"
 	@echo "- test-bandit: security check with bandit"
 	@echo "- test-int: run integration tests"
+	@echo "- setup-ubuntu-20.04: install needed tools to build and test on Ubuntu Linux"
 	@echo "- clean: clean temp files, venv, etc"
 
 .PHONY: test
@@ -29,6 +30,10 @@ test-int: .venv/ok
 .PHONY: build
 build: .venv/ok
 	@./tests/build.sh
+
+.PHONY: setup-ubuntu-20.04
+setup-ubuntu-20.04:
+	@./tests/setup_ubuntu-20.04.sh
 
 .venv/ok:
 	@./tests/setup_venv.sh
