@@ -17,6 +17,8 @@ You can get the package from [pypi](https://pypi.org/project/osc-sdk/):
 pip3 install osc-sdk
 ```
 
+If you are using Microsoft Windows, see [how to setup osc-cli on Windows](windows-setup.md).
+
 ### Installing from sources
 
 It is a good practice to create a [dedicated virtualenv](https://virtualenv.pypa.io/en/latest/) first. Even if it usually won't harm to install Python libraries directly on the system, better to contain dependencies in a virtual environment.
