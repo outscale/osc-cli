@@ -15,9 +15,9 @@
 
 - Setup your credentials:
   - As you are in your cmd prompt, you should see `C:\Users\YOUR_USER>`
-  - type `mkdir .osc_sdk`
-  - In Windows Explorer, go to `C:\Users\YOUR_USER\.osc_sdk`
-  - Import [`config.json`](https://github.com/outscale/osc-cli/blob/0f54e6ee0e17df7af4fc22d2fd29cd21825ddd0d/osc_sdk/config.json) in that folder (be sure to name the file `config.json` and not `config.json.txt`)
+  - run `mkdir .osc`
+  - In Windows Explorer, go to `C:\Users\YOUR_USER\.osc`
+  - Import [`config.basic.example.json`](config.basic.example.json) in that folder and name it `config.json` (not `config.json.txt`)
   - Edit `config.json` and setup your credentials
   
 - Run osc-cli:
