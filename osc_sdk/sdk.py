@@ -430,6 +430,64 @@ class ApiCall(object):
     def get_response(self, request, raw_content):
         raise NotImplementedError
 
+    def build_request(self, action, *args, **kwargs):
+        raise NotImplementedError
+
+    def make_request(self, action, *args, **kwargs):
+        url, headers, data = self.build_request(action, *args, **kwargs)
+
+        request = requests.Session()
+        if self.ssl_engine_id:
+            adapter = HttpsAdapter(self.ssl_engine_id, self.ssl_engine_path, self.ssl_module_path)
+            request.mount("https://", adapter)
+
+        res = request.request(
+            cert=self.client_certificate,
+            data=data,
+            headers=headers,
+            method=self.method,
+            url=url,
+            verify=self.ssl_verify
+        )
+
+        # If we get an authentication error at this point with ephemeral,
+        # this mean that either:
+        # 1/ Ephemeral Access Key has been manually removed from account or
+        # 2/ File containing ephemeral Access Key has been alterated
+        # In either case, ephemeral auth file is removed an request retried
+        if res.status_code == 403 and self.authentication_method == 'ephemeral':
+            logger.error("Invalid ephemeral Access Key")
+            self.ephemeral_auth_file_clean()
+            self.init_ephemeral_auth()
+            return self.make_request(action, args, kwargs)
+
+        raw_content = self.get_raw_content(res)
+        self.response = self.get_response(res, raw_content)
+
+    def get_raw_content(self, res):
+        raw_content = None
+        if res.text is not None and len(res.text) > 0:
+            raw_content = res.text
+        elif res.content is not None and len(res.content) > 0:
+            raw_content = res.content
+        elif res.raw.data is not None and len(res.raw.data) > 0:
+            encoding = res.encoding
+            if encoding == None:
+                encoding = "utf-8"
+            raw_content = res.raw.data.decode(encoding)
+        return raw_content
+
+
+class XmlApiCall(ApiCall):
+    def get_response(self, http_response, raw_content):
+        if http_response.status_code not in SUCCESS_CODES:
+            raise OscApiException(http_response)
+        try:
+            response = xmltodict.parse(raw_content)
+        except Exception:
+            response = "Unable to parse response: '{}'".format(raw_content)
+        return response
+
     def get_parameters(self, data, prefix=''):
         ret = {}
         if isinstance(data, list):
@@ -449,7 +507,7 @@ class ApiCall(object):
                 return {prefix: ''}
             return {prefix: str(data)}
 
-    def make_request(self, action, *args, **kwargs):
+    def build_request(self, action, *args, **kwargs):
         self._set_datestamp()
 
         # Calculate request params
@@ -510,57 +568,7 @@ class ApiCall(object):
                 signed_headers,
             )})
 
-        request = requests.Session()
-        if self.ssl_engine_id:
-            adapter = HttpsAdapter(self.ssl_engine_id, self.ssl_engine_path, self.ssl_module_path)
-            request.mount("https://", adapter)
-
-        res = request.request(
-            cert=self.client_certificate,
-            data=request_params,
-            headers=headers,
-            method=self.method,
-            url=url,
-            verify=self.ssl_verify
-        )
-
-        # If we get an authentication error at this point with ephemeral,
-        # this mean that either:
-        # 1/ Ephemeral Access Key has been manually removed from account or
-        # 2/ File containing ephemeral Access Key has been alterated
-        # In either case, ephemeral auth file is removed an request retried
-        if res.status_code == 403 and self.authentication_method == 'ephemeral':
-            logger.error("Invalid ephemeral Access Key")
-            self.ephemeral_auth_file_clean()
-            self.init_ephemeral_auth()
-            return self.make_request(action, args, kwargs)
-
-        raw_content = self.get_raw_content(res)
-        self.response = self.get_response(res, raw_content)
-
-    def get_raw_content(self, res):
-        raw_content = None
-        if res.text is not None and len(res.text) > 0:
-            raw_content = res.text
-        elif res.content is not None and len(res.content) > 0:
-            raw_content = res.content
-        elif res.raw.data is not None and len(res.raw.data) > 0:
-            encoding = res.encoding
-            if encoding == None:
-                encoding = "utf-8"
-            raw_content = res.raw.data.decode(encoding)
-        return raw_content
-
-
-class XmlApiCall(ApiCall):
-    def get_response(self, http_response, raw_content):
-        if http_response.status_code not in SUCCESS_CODES:
-            raise OscApiException(http_response)
-        try:
-            response = xmltodict.parse(raw_content)
-        except Exception:
-            response = "Unable to parse response: '{}'".format(raw_content)
-        return response
+        return url, headers, request_params
 
 
 class FcuCall(XmlApiCall):
@@ -630,7 +638,7 @@ class JsonApiCall(ApiCall):
         }
         return signed_headers, canonical_headers, headers
 
-    def make_request(self, action, *args, **kwargs):
+    def build_request(self, action, *args, **kwargs):
         self._set_datestamp()
 
         request_params = self.get_parameters(kwargs, action)
@@ -655,43 +663,12 @@ class JsonApiCall(ApiCall):
                 hashlib.sha256(json_params.encode('utf-8')).hexdigest(),
             ]
         )
-
-        # TODO: refactor to avoid code duplication with mother-class
-
         if self.authentication_method in ['accesskey', 'ephemeral']:
-            headers['Authorization'] = self.get_authorization_header(
+            headers.update({'Authorization': self.get_authorization_header(
                 canonical_request,
                 signed_headers,
-            )
-
-        request = requests.Session()
-        if self.ssl_engine_id:
-            adapter = HttpsAdapter(self.ssl_engine_id, self.ssl_engine_path, self.ssl_module_path)
-            request.mount("https://", adapter)
-
-        res = request.request(
-            cert=self.client_certificate,
-            data=json_params,
-            headers=headers,
-            method=self.method,
-            url=self.get_url(action),
-            verify=self.ssl_verify,
-        )
-
-        # If we get an authentication error at this point with ephemeral,
-        # this mean that either:
-        # 1/ Ephemeral Access Key has been manually removed from account or
-        # 2/ File containing ephemeral Access Key has been alterated
-        # In either case, ephemeral auth file is removed an request retried
-        if res.status_code == 403 and self.authentication_method == 'ephemeral':
-            logger.error("Invalid ephemeral Access Key")
-            self.ephemeral_auth_file_clean()
-            self.init_ephemeral_auth()
-            return self.make_request(action, args, kwargs)
-
-        raw_content = self.get_raw_content(res)
-        self.response = self.get_response(res, raw_content)
-
+            )})
+        return self.get_url(action), headers, json_params
 
 class IcuCall(JsonApiCall):
     API_NAME = 'icu'
