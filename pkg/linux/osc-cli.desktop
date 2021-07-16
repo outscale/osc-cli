@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=osc-cli
+Exec=osc-cli
+Comment=Outscale Cli
+Icon=python
+Categories=Development;
+Terminal=true
