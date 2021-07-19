@@ -7,7 +7,7 @@ setup(
     author="Outscale SAS",
     author_email="contact@outscale.com",
     description="Outscale API SDK and CLI",
-    long_description=open("readme.md").read(),
+    long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     license='BSD',
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
