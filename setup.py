@@ -25,6 +25,7 @@ setup(
     entry_points={"console_scripts": ["osc-cli = osc_sdk.sdk:main"]},
     install_requires=[
         "setuptools",
+        "defusedxml==0.7.1",
         "fire==0.1.3",
         "requests==2.26.0",
         "xmltodict==0.11.0",
