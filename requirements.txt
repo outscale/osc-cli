@@ -1,6 +1,6 @@
 fire==0.4.0
 requests==2.26.0
 xmltodict==0.12.0
-pylint==2.9.6
+pylint==2.10.2
 bandit==1.7.0
 defusedxml==0.7.1
