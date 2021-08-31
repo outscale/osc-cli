@@ -10,7 +10,7 @@ PY_CP=cp$(PY_MAJ)$(PY_MID)
 PY_STR=python$(PY_VER)
 PY_TARGET="$(PY_STR).$(PY_MIN)-$(PY_CP)-$(PY_CP)-manylinux$(WHICH_LINUX)_x86_64.AppImage"
 
-all: osc-cli-x86_64.AppImage
+all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip
 
 $(PY_TARGET):
 	wget https://github.com/niess/python-appimage/releases/download/$(PY_STR)/$(PY_TARGET)
@@ -46,5 +46,11 @@ appimagetool-x86_64.AppImage:
 osc-cli-x86_64.AppImage: osc-cli.AppDir/AppRun osc-cli.AppDir osc-cli.AppDir/done appimagetool-x86_64.AppImage $(PY_TARGET)
 	./appimagetool-x86_64.AppImage osc-cli.AppDir/
 
+osc-cli-x86_64.zip: osc-cli
+	zip -r osc-cli-x86_64.zip osc-cli
+
+osc-cli:
+	docker run --rm -it -v ${PWD}/..:/src outscale/wine-pyinstaller:0.0.1 --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
+
 clean:
-	rm -rvf *AppImage* osc-cli.AppDir
+	rm -rvf *AppImage* osc-cli.AppDir osc-cli.zip osc-cli
