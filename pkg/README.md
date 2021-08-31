@@ -14,6 +14,12 @@ this will create all packages, for now only AppImage is supported
 make osc-cli-x86_64.AppImage
 ```
 
+## Windows binary
+
+```
+make osc-cli-x86_64.zip
+```
+
 ## clean
 
 ```
