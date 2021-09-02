@@ -1,11 +1,6 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-
-name: Upload Python Package
+name: Code Check
 
 on:
-  # Trigger the workflow on push or pull request,
-  # but only for the master branch
   pull_request:
     branches:
       - master
