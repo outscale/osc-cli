@@ -8,13 +8,13 @@ import re
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 
 import defusedxml.ElementTree as ET
 import fire
 import requests
 import xmltodict
-from requests.models import Response
+from requests.models import Request, Response
 from typing_extensions import TypedDict
 
 CANONICAL_URI = "/"
@@ -39,6 +39,10 @@ USER_AGENT = "osc_sdk " + SDK_VERSION
 logger = logging.getLogger("osc_sdk")
 
 
+CallParameters = Dict[str, Any]
+Headers = Tuple[str, str, Dict[str, str]]
+
+
 class Configuration(TypedDict):
     method: str
     access_key: str
@@ -50,6 +54,21 @@ class Configuration(TypedDict):
     client_certificate: str
     endpoint: str
     host: str
+
+
+class PasswordParams(TypedDict):
+    AuthenticationMethod: str
+    Login: Optional[str]
+    Password: Optional[str]
+
+
+class ResponseContent(Dict):
+    requestid: str
+
+
+class Tag(TypedDict):
+    Name: str
+    Values: List[str]
 
 
 class OscApiException(Exception):
@@ -131,11 +150,20 @@ class ApiCall:
     SIG_ALGORITHM = "AWS4-HMAC-SHA256"
     SIG_TYPE = "AWS4"
 
-    response: Optional[str] = field(default=None, init=False)
+    response: Optional[ResponseContent] = field(default=None, init=False)
     date: Optional[str] = field(default=None, init=False)
     datestamp: Optional[str] = field(default=None, init=False)
 
-    method: str = field(default="")
+    method: str = field(default="", init=False)
+    endpoint: str = field(default="", init=False)
+    host: str = field(default="", init=False)
+    access_key: Optional[str] = field(default=None, init=False)
+    secret_key: Optional[str] = field(default=None, init=False)
+    version: str = field(default=DEFAULT_VERSION, init=False)
+    protocol: str = field(default="", init=False)
+    region: str = field(default=DEFAULT_REGION, init=False)
+    ssl_verify: bool = field(default=SSL_VERIFY, init=False)
+    client_certificate: Optional[str] = field(default=None, init=False)
 
     def __post_init__(self):
         if not self.API_NAME:
@@ -144,14 +172,15 @@ class ApiCall:
         self.setup_profile_options(self.profile)
         self.check_authentication_options()
 
+    def setup_profile_options(self, profile: str):
+        conf = get_conf(profile)
+
+        self.method = conf.pop("method", DEFAULT_METHOD)
         if self.method not in METHODS_SUPPORTED:
             raise Exception(
                 f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}."
             )
 
-    def setup_profile_options(self, profile: str):
-        conf = get_conf(profile)
-        self.method = conf.pop("method", DEFAULT_METHOD)
         self.access_key = conf.pop("access_key")
         self.secret_key = conf.pop("secret_key")
         self.version = conf.pop("version", DEFAULT_VERSION)
@@ -162,12 +191,19 @@ class ApiCall:
 
         endpoint = conf.get("endpoint")
         host = conf.get("host", "")
-        if endpoint:
-            self.endpoint = endpoint
-        elif host:
-            self.endpoint = ".".join([self.API_NAME, self.region, host])
-        else:
+        if host and not endpoint:
+            endpoint = ".".join([self.API_NAME, self.region, host])
+
+        if not endpoint:
             raise RuntimeError("No endpoint found")
+
+        parsed_url = urllib.parse.urlparse(endpoint)
+        if parsed_url.scheme:
+            self.endpoint = endpoint
+            self.host = parsed_url.netloc
+        else:
+            self.endpoint = f"{self.protocol}://{endpoint}"
+            self.host = endpoint
 
     def check_authentication_options(self):
         if self.authentication_method not in {"accesskey", "password"}:
@@ -185,39 +221,28 @@ class ApiCall:
             if self.password is None:
                 raise RuntimeError("Missing password for authentication")
 
-    @property
-    def endpoint(self):
-        return self.__endpoint
-
-    @property
-    def host(self):
-        return self.__host
-
-    @endpoint.setter
-    def endpoint(self, value):
-        parsed_url = urllib.parse.urlparse(value)
-        if parsed_url.scheme:
-            self.__endpoint = value
-            self.__host = parsed_url.netloc
-        else:
-            self.__endpoint = f"{self.protocol}://{value}"
-            self.__host = value
-
-    def _set_datestamp(self):
+    def set_datestamp(self):
         date = datetime.datetime.utcnow()
         self.date = date.strftime("%Y%m%dT%H%M%SZ")
         self.datestamp = date.strftime("%Y%m%d")
 
-    def get_url(self, _, request_params: Optional[str] = None):
+    def get_url(self, _, request_params: Optional[CallParameters] = None) -> str:
         value = self.endpoint
         if self.method == "GET":
             value += f"?{request_params}"
         return value
 
-    def get_canonical_uri(self, call):
+    def get_canonical_uri(self, _: str) -> str:
         return CANONICAL_URI
 
-    def get_authorization_header(self, canonical_request, signed_headers):
+    def get_authorization_header(
+        self, canonical_request: str, signed_headers: str
+    ) -> str:
+        if self.date is None:
+            raise RuntimeError("Date has nos been set up")
+        if not self.secret_key:
+            raise RuntimeError("Secret key is needed to authorize call")
+
         credentials = [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
         credential_scope = "/".join(credentials)
         string_to_sign = "\n".join(
@@ -235,25 +260,26 @@ class ApiCall:
             key, string_to_sign.encode("utf-8"), hashlib.sha256
         ).hexdigest()
 
-        return "{} Credential={}/{}, SignedHeaders={}, Signature={}".format(
-            self.SIG_ALGORITHM,
-            self.access_key,
-            credential_scope,
-            signed_headers,
-            signature,
+        return (
+            f"{self.SIG_ALGORITHM} "
+            f"Credential={self.access_key}/{credential_scope}, "
+            f"SignedHeaders={signed_headers}, "
+            f"Signature={signature}"
         )
 
-    def get_password_params(self):
+    def get_password_params(self) -> PasswordParams:
         return {
             "AuthenticationMethod": "password",
             "Login": self.login,
             "Password": self.password,
         }
 
-    def get_response(self, request):
+    def get_response(self, http_response: Response):
         raise NotImplementedError
 
-    def get_parameters(self, data, prefix=""):
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], prefix: str = ""
+    ) -> CallParameters:
         ret = {}
         if isinstance(data, list):
             if prefix:
@@ -271,9 +297,11 @@ class ApiCall:
             if data == "":
                 return {prefix: ""}
             return {prefix: str(data)}
+        else:
+            raise RuntimeError("Parameters could not be None")
 
-    def make_request(self, call, **kwargs):
-        self._set_datestamp()
+    def make_request(self, call: str, **kwargs: CallParameters):
+        self.set_datestamp()
 
         # Calculate request params
         request_params = self.get_parameters(data=kwargs)
@@ -325,7 +353,8 @@ class ApiCall:
             headers.update(
                 {
                     "Authorization": self.get_authorization_header(
-                        canonical_request, signed_headers,
+                        canonical_request,
+                        signed_headers,
                     )
                 }
             )
@@ -343,11 +372,11 @@ class ApiCall:
 
 
 class XmlApiCall(ApiCall):
-    def get_response(self, http_response):
+    def get_response(self, http_response: Response) -> Union[str, ResponseContent]:
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
         try:
-            response = xmltodict.parse(http_response.content)
+            response = cast(ResponseContent, xmltodict.parse(http_response.content))
         except Exception:
             response = f"Unable to parse response: '{http_response.text}'"
         return response
@@ -360,7 +389,7 @@ class FcuCall(XmlApiCall):
 class LbuCall(XmlApiCall):
     API_NAME = "lbu"
 
-    def get_parameters(self, data, prefix=""):
+    def get_parameters(self, data: CallParameters, prefix: str = "") -> CallParameters:
         ret = {}
         if isinstance(data, list):
             if prefix:
@@ -379,12 +408,14 @@ class LbuCall(XmlApiCall):
             if data == "":
                 return {prefix: ""}
             return {prefix: str(data)}
+        else:
+            raise RuntimeError("Parameters could not be None")
 
 
 class EimCall(XmlApiCall):
     API_NAME = "eim"
 
-    def get_parameters(self, data):
+    def get_parameters(self, data: CallParameters) -> CallParameters:
         if isinstance(data, dict):
             policy_document = data.get("PolicyDocument")
             if policy_document:
@@ -396,16 +427,16 @@ class JsonApiCall(ApiCall):
     SERVICE = ""
     CONTENT_TYPE = "application/x-amz-json-1.1"
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data: CallParameters, _) -> CallParameters:
         return data
 
-    def get_response(self, http_response):
+    def get_response(self, http_response: Response) -> ResponseContent:
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
 
         return json.loads(http_response.text)
 
-    def build_headers(self, target, json_parameters):
+    def build_headers(self, target: str, json_parameters: str) -> Headers:
         signed_headers = "host;x-amz-date;x-amz-target"
         canonical_headers = (
             f"host:{self.host}\n" f"x-amz-date:{self.date}\n" f"x-amz-target:{target}\n"
@@ -419,8 +450,8 @@ class JsonApiCall(ApiCall):
         }
         return signed_headers, canonical_headers, headers
 
-    def make_request(self, call, **kwargs):
-        self._set_datestamp()
+    def make_request(self, call: str, **kwargs: CallParameters):
+        self.set_datestamp()
 
         request_params = self.get_parameters(kwargs, call)
 
@@ -448,7 +479,8 @@ class JsonApiCall(ApiCall):
 
         if self.authentication_method == "accesskey":
             headers["Authorization"] = self.get_authorization_header(
-                canonical_request, signed_headers,
+                canonical_request,
+                signed_headers,
             )
 
         self.response = self.get_response(
@@ -469,7 +501,7 @@ class IcuCall(JsonApiCall):
     FILTERS_NAME_PATTERN = re.compile("^Filters.([0-9]*).Name$")
     FILTERS_VALUES_STR = "^Filters.%s.Values.[0-9]*$"
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data: CallParameters, call: str) -> CallParameters:
         # Specific to Icu
         if self.authentication_method == "accesskey":
             data.update({"AuthenticationMethod": "accesskey"})
@@ -478,7 +510,7 @@ class IcuCall(JsonApiCall):
         data = {k: v for k, v in data.items() if not k.startswith("Filters.")}
         return {"Action": call, "Filters": filters, "Version": self.version, **data}
 
-    def get_filters(self, data):
+    def get_filters(self, data: CallParameters) -> List[Tag]:
         filters = []
         for k, v in data.items():
             match = re.search(self.FILTERS_NAME_PATTERN, k)
@@ -487,7 +519,10 @@ class IcuCall(JsonApiCall):
                 values = [v for k, v in data.items() if re.match(value_pattern, k)]
                 if values:
                     filters.append(
-                        {"Name": v, "Values": values,}
+                        {
+                            "Name": v,
+                            "Values": values,
+                        }
                     )
         return filters
 
@@ -496,7 +531,7 @@ class DirectLinkCall(JsonApiCall):
     API_NAME = "directlink"
     SERVICE = "OvertureService"
 
-    def get_response(self, http_response):
+    def get_response(self, http_response: Response) -> ResponseContent:
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
 
@@ -518,13 +553,13 @@ class OSCCall(JsonApiCall):
     SIG_TYPE = "OSC4"
     SERVICE = "OutscaleService"
 
-    def get_parameters(self, data: Dict[str, Any], call: str) -> Dict[str, Any]:
+    def get_parameters(self, data: Dict[str, Any], _: str) -> CallParameters:
         parameters = {}
         for k, v in data.items():
             self.format_data(parameters, k, v)
         return parameters
 
-    def format_data(self, parameters, key, value):
+    def format_data(self, parameters: CallParameters, key: str, value: str):
         if "." in key:
             head_key, queue_key = key.split(".", 1)
             parameters.setdefault(head_key, {})
@@ -536,17 +571,17 @@ class OSCCall(JsonApiCall):
                 else value
             )
 
-    def get_canonical_uri(self, call):
+    def get_canonical_uri(self, call: str) -> str:
         return f"/{self.API_NAME}/latest/{call}"
 
-    def get_url(self, call, _):
+    def get_url(self, call: str, _: CallParameters) -> str:
         return "/".join([self.endpoint, self.get_canonical_uri(call)])
 
-    def get_password_params(self):
+    def get_password_params(self) -> Dict:
         # Don't put any auth parameters in body
         return {}
 
-    def build_basic_auth(self) -> Dict:
+    def build_basic_auth(self) -> Dict[str, str]:
         if self.authentication_method == "password":
             creds = f"{self.login}:{self.password}"
             basic_auth = "Basic {}".format(
@@ -555,7 +590,7 @@ class OSCCall(JsonApiCall):
             return {"Authorization": basic_auth}
         return {}
 
-    def build_headers(self, target, json_parameters):
+    def build_headers(self, target: str, _) -> Headers:
         signed_headers = "host;x-osc-date;x-osc-target"
         canonical_headers = (
             f"host:{self.host}\n" f"x-osc-date:{self.date}\n" f"x-osc-target:{target}\n"
@@ -592,7 +627,7 @@ def api_connect(
     login: Optional[str] = None,
     password: Optional[str] = None,
     authentication_method: str = DEFAULT_AUTHENTICATION_METHOD,
-    **kwargs,
+    **kwargs: CallParameters,
 ):
     calls = {
         "api": OSCCall,
