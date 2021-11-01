@@ -24,7 +24,7 @@ setup(
     entry_points={"console_scripts": ["osc-cli = osc_sdk.sdk:main"]},
     install_requires=[
         "setuptools",
-        'dataclass>=0.8; python_version < "3.7"',
+        'dataclasses>=0.8; python_version < "3.7"',
         "defusedxml==0.7.1",
         "fire==0.1.3",
         "requests==2.26.0",
