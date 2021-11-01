@@ -19,7 +19,7 @@
   - In Windows Explorer, go to `C:\Users\YOUR_USER\.osc_sdk`
   - Import [`config.json`](https://github.com/outscale/osc-cli/blob/0f54e6ee0e17df7af4fc22d2fd29cd21825ddd0d/osc_sdk/config.json) in that folder (be sure to name the file `config.json` and not `config.json.txt`)
   - Edit `config.json` and setup your credentials
-  
+
 - Run osc-cli:
   - Open a Windows cmd prompt
   - You should now be able to run `osc-cli` (e.g. `osc-cli api ReadVolumes`)
