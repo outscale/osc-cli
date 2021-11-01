@@ -28,7 +28,7 @@ setup(
         "defusedxml==0.7.1",
         "fire==0.1.3",
         "requests==2.26.0",
-        "typing_extensions==3.7.4.3",
+        "typing_extensions>=3.10.0.2",
         "xmltodict==0.11.0",
     ],
 )
