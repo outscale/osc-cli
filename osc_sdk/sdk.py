@@ -1,20 +1,21 @@
+import base64
 import datetime
 import hashlib
 import hmac
 import json
 import logging
-from pathlib import Path
 import re
-from typing import Any, Dict, List, Mapping, Optional, cast
-from typing_extensions import TypedDict
-from dataclasses import dataclass, field
 import urllib.parse
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional, cast
+
 import defusedxml.ElementTree as ET
-import base64
 import fire
 import requests
-from requests.models import Response
 import xmltodict
+from requests.models import Response
+from typing_extensions import TypedDict
 
 CANONICAL_URI = "/"
 CONFIGURATION_FILE = "config.json"
@@ -144,8 +145,9 @@ class ApiCall:
         self.check_authentication_options()
 
         if self.method not in METHODS_SUPPORTED:
-            raise Exception(f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}.")
-
+            raise Exception(
+                f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}."
+            )
 
     def setup_profile_options(self, profile: str):
         conf = get_conf(profile)
@@ -300,7 +302,7 @@ class ApiCall:
                 "content-type": self.CONTENT_TYPE,
                 "host": self.host,
                 "x-amz-date": self.date,
-                "x-amz-target": f"{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}"
+                "x-amz-target": f'{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}',
             }
 
             payload_hash = hashlib.sha256(request_params.encode("utf-8")).hexdigest()
@@ -323,8 +325,7 @@ class ApiCall:
             headers.update(
                 {
                     "Authorization": self.get_authorization_header(
-                        canonical_request,
-                        signed_headers,
+                        canonical_request, signed_headers,
                     )
                 }
             )
@@ -407,9 +408,7 @@ class JsonApiCall(ApiCall):
     def build_headers(self, target, json_parameters):
         signed_headers = "host;x-amz-date;x-amz-target"
         canonical_headers = (
-            "host:{}\n"
-            "x-amz-date:{}\n"
-            "x-amz-target:{}\n".format(self.host, self.date, target)
+            f"host:{self.host}\n" f"x-amz-date:{self.date}\n" f"x-amz-target:{target}\n"
         )
         headers = {
             "content-type": self.CONTENT_TYPE,
@@ -449,8 +448,7 @@ class JsonApiCall(ApiCall):
 
         if self.authentication_method == "accesskey":
             headers["Authorization"] = self.get_authorization_header(
-                canonical_request,
-                signed_headers,
+                canonical_request, signed_headers,
             )
 
         self.response = self.get_response(
@@ -489,10 +487,7 @@ class IcuCall(JsonApiCall):
                 values = [v for k, v in data.items() if re.match(value_pattern, k)]
                 if values:
                     filters.append(
-                        {
-                            "Name": v,
-                            "Values": values,
-                        }
+                        {"Name": v, "Values": values,}
                     )
         return filters
 
@@ -563,9 +558,7 @@ class OSCCall(JsonApiCall):
     def build_headers(self, target, json_parameters):
         signed_headers = "host;x-osc-date;x-osc-target"
         canonical_headers = (
-            f"host:{self.host}\n"
-            f"x-osc-date:{self.date}\n"
-            f"x-osc-target:{target}\n"
+            f"host:{self.host}\n" f"x-osc-date:{self.date}\n" f"x-osc-target:{target}\n"
         )
         headers = {
             "Content-Type": self.CONTENT_TYPE,
