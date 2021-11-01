@@ -40,6 +40,7 @@ logger = logging.getLogger("osc_sdk")
 
 
 CallParameters = Dict[str, Any]
+EncodedCallParameters = Optional[str]
 Headers = Tuple[str, str, Dict[str, str]]
 
 
@@ -56,7 +57,7 @@ class Configuration(TypedDict):
     host: str
 
 
-class PasswordParams(TypedDict):
+class PasswordParams(TypedDict, total=False):
     AuthenticationMethod: str
     Login: Optional[str]
     Password: Optional[str]
@@ -71,15 +72,20 @@ class Tag(TypedDict):
     Values: List[str]
 
 
+@dataclass
 class OscApiException(Exception):
-    def __init__(self, http_response: Response):
-        super(OscApiException, self).__init__()
+    http_response: Response
+
+    status_code: int = field(init=False)
+    error_code: Optional[str] = field(default=None, init=False)
+    message: Optional[str] = field(default=None, init=False)
+    code_type: Optional[str] = field(default=None, init=False)
+    request_id: Optional[str] = field(default=None, init=False)
+
+    def __post_init__(self, http_response: Response):
+        super().__init__()
         self.status_code = http_response.status_code
         # Set error details
-        self.error_code = None
-        self.message = None
-        self.code_type = None
-        self.request_id = None
         self._set(http_response)
 
     def __str__(self) -> str:
@@ -175,18 +181,18 @@ class ApiCall:
     def setup_profile_options(self, profile: str):
         conf = get_conf(profile)
 
-        self.method = conf.pop("method", DEFAULT_METHOD)
+        self.method = conf.get("method", DEFAULT_METHOD)
         if self.method not in METHODS_SUPPORTED:
             raise Exception(
                 f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}."
             )
 
-        self.access_key = conf.pop("access_key")
-        self.secret_key = conf.pop("secret_key")
-        self.version = conf.pop("version", DEFAULT_VERSION)
-        self.protocol = "https" if conf.pop("https", False) else "http"
-        self.region = conf.pop("region_name", DEFAULT_REGION)
-        self.ssl_verify = conf.pop("ssl_verify", SSL_VERIFY)
+        self.access_key = conf.get("access_key")
+        self.secret_key = conf.get("secret_key")
+        self.version = conf.get("version", DEFAULT_VERSION)
+        self.protocol = "https" if conf.get("https", False) else "http"
+        self.region = conf.get("region_name", DEFAULT_REGION)
+        self.ssl_verify = conf.get("ssl_verify", SSL_VERIFY)
         self.client_certificate = conf.get("client_certificate")
 
         endpoint = conf.get("endpoint")
@@ -226,10 +232,10 @@ class ApiCall:
         self.date = date.strftime("%Y%m%dT%H%M%SZ")
         self.datestamp = date.strftime("%Y%m%d")
 
-    def get_url(self, _, request_params: Optional[CallParameters] = None) -> str:
+    def get_url(self, call: str, encoded_request_params: EncodedCallParameters = None) -> str:
         value = self.endpoint
         if self.method == "GET":
-            value += f"?{request_params}"
+            value += f"?{encoded_request_params}"
         return value
 
     def get_canonical_uri(self, _: str) -> str:
@@ -238,7 +244,7 @@ class ApiCall:
     def get_authorization_header(
         self, canonical_request: str, signed_headers: str
     ) -> str:
-        if self.date is None:
+        if self.date is None or self.datestamp is None:
             raise RuntimeError("Date has nos been set up")
         if not self.secret_key:
             raise RuntimeError("Secret key is needed to authorize call")
@@ -312,20 +318,22 @@ class ApiCall:
         request_params["Action"] = call
         if "Version" not in request_params:
             request_params["Version"] = self.version
-        request_params = urllib.parse.urlencode(request_params)
+        encoded_request_params = cast(EncodedCallParameters, urllib.parse.urlencode(request_params))
 
-        # Calculate URL before request_params value is modified
-        url = self.get_url(call, request_params)
+        # Calculate URL before encoded_request_params value is modified
+        url = self.get_url(call, encoded_request_params)
 
         if self.method == "GET":
+            if encoded_request_params is None:
+                raise RuntimeError("Encoded call parameters could not be None")
             headers = {
                 "host": self.host,
                 "x-amz-date": self.date,
             }
             payload_hash = hashlib.sha256("".encode("utf-8")).hexdigest()
-            canonical_params = request_params
-            request_params = None
-        else:
+            canonical_params = encoded_request_params
+            encoded_request_params = None
+        elif encoded_request_params is not None:
             headers = {
                 "content-type": self.CONTENT_TYPE,
                 "host": self.host,
@@ -333,8 +341,10 @@ class ApiCall:
                 "x-amz-target": f'{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}',
             }
 
-            payload_hash = hashlib.sha256(request_params.encode("utf-8")).hexdigest()
+            payload_hash = hashlib.sha256(encoded_request_params.encode("utf-8")).hexdigest()
             canonical_params = ""
+        else:
+            raise RuntimeError("Encoded call parameters could not be None")
 
         canonical_headers = "".join(f"{k}:{v}\n" for k, v in headers.items())
         signed_headers = ";".join(headers)
@@ -362,7 +372,7 @@ class ApiCall:
         self.response = self.get_response(
             requests.request(
                 cert=self.client_certificate,
-                data=request_params,
+                data=encoded_request_params,
                 headers=headers,
                 method=self.method,
                 url=url,
@@ -376,10 +386,9 @@ class XmlApiCall(ApiCall):
         if http_response.status_code not in SUCCESS_CODES:
             raise OscApiException(http_response)
         try:
-            response = cast(ResponseContent, xmltodict.parse(http_response.content))
+            return cast(ResponseContent, xmltodict.parse(http_response.content))
         except Exception:
-            response = f"Unable to parse response: '{http_response.text}'"
-        return response
+            return f"Unable to parse response: '{http_response.text}'"
 
 
 class FcuCall(XmlApiCall):
@@ -389,7 +398,9 @@ class FcuCall(XmlApiCall):
 class LbuCall(XmlApiCall):
     API_NAME = "lbu"
 
-    def get_parameters(self, data: CallParameters, prefix: str = "") -> CallParameters:
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], prefix: str = ""
+    ) -> CallParameters:
         ret = {}
         if isinstance(data, list):
             if prefix:
@@ -415,19 +426,25 @@ class LbuCall(XmlApiCall):
 class EimCall(XmlApiCall):
     API_NAME = "eim"
 
-    def get_parameters(self, data: CallParameters) -> CallParameters:
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], _: str = ""
+    ) -> CallParameters:
         if isinstance(data, dict):
             policy_document = data.get("PolicyDocument")
             if policy_document:
                 data["PolicyDocument"] = json.dumps(policy_document)
-        return data
+        return data  # type: ignore
 
 
 class JsonApiCall(ApiCall):
     SERVICE = ""
     CONTENT_TYPE = "application/x-amz-json-1.1"
 
-    def get_parameters(self, data: CallParameters, _) -> CallParameters:
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], _: str = ""
+    ) -> CallParameters:
+        if not isinstance(data, dict):
+            raise RuntimeError("Parameters lists are not supported")
         return data
 
     def get_response(self, http_response: Response) -> ResponseContent:
@@ -437,6 +454,9 @@ class JsonApiCall(ApiCall):
         return json.loads(http_response.text)
 
     def build_headers(self, target: str, json_parameters: str) -> Headers:
+        if self.date is None:
+            raise RuntimeError("Date has nos been set up")
+
         signed_headers = "host;x-amz-date;x-amz-target"
         canonical_headers = (
             f"host:{self.host}\n" f"x-amz-date:{self.date}\n" f"x-amz-target:{target}\n"
@@ -501,14 +521,19 @@ class IcuCall(JsonApiCall):
     FILTERS_NAME_PATTERN = re.compile("^Filters.([0-9]*).Name$")
     FILTERS_VALUES_STR = "^Filters.%s.Values.[0-9]*$"
 
-    def get_parameters(self, data: CallParameters, call: str) -> CallParameters:
-        # Specific to Icu
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], prefix: str = ""
+    ) -> CallParameters:
+        if not isinstance(data, dict):
+            raise RuntimeError("Parameters lists are not supported")
+
+        # Specific to ICU
         if self.authentication_method == "accesskey":
             data.update({"AuthenticationMethod": "accesskey"})
 
         filters = self.get_filters(data)
         data = {k: v for k, v in data.items() if not k.startswith("Filters.")}
-        return {"Action": call, "Filters": filters, "Version": self.version, **data}
+        return {"Action": prefix, "Filters": filters, "Version": self.version, **data}
 
     def get_filters(self, data: CallParameters) -> List[Tag]:
         filters = []
@@ -519,12 +544,13 @@ class IcuCall(JsonApiCall):
                 values = [v for k, v in data.items() if re.match(value_pattern, k)]
                 if values:
                     filters.append(
-                        {
+                        cast(Tag,{
                             "Name": v,
                             "Values": values,
                         }
-                    )
+                    ))
         return filters
+                    
 
 
 class DirectLinkCall(JsonApiCall):
@@ -553,8 +579,13 @@ class OSCCall(JsonApiCall):
     SIG_TYPE = "OSC4"
     SERVICE = "OutscaleService"
 
-    def get_parameters(self, data: Dict[str, Any], _: str) -> CallParameters:
-        parameters = {}
+    def get_parameters(
+        self, data: Union[CallParameters, List[CallParameters]], prefix: str = ""
+    ) -> CallParameters:
+        if not isinstance(data, dict):
+            raise RuntimeError("Parameters lists are not supported")
+
+        parameters = cast(CallParameters, {})  # type: ignore
         for k, v in data.items():
             self.format_data(parameters, k, v)
         return parameters
@@ -574,10 +605,10 @@ class OSCCall(JsonApiCall):
     def get_canonical_uri(self, call: str) -> str:
         return f"/{self.API_NAME}/latest/{call}"
 
-    def get_url(self, call: str, _: CallParameters) -> str:
+    def get_url(self, call: str, encoded_request_params: EncodedCallParameters = None) -> str:
         return "/".join([self.endpoint, self.get_canonical_uri(call)])
 
-    def get_password_params(self) -> Dict:
+    def get_password_params(self) -> PasswordParams:
         # Don't put any auth parameters in body
         return {}
 
@@ -591,6 +622,9 @@ class OSCCall(JsonApiCall):
         return {}
 
     def build_headers(self, target: str, _) -> Headers:
+        if self.date is None:
+            raise RuntimeError("Date has nos been set up")
+
         signed_headers = "host;x-osc-date;x-osc-target"
         canonical_headers = (
             f"host:{self.host}\n" f"x-osc-date:{self.date}\n" f"x-osc-target:{target}\n"
