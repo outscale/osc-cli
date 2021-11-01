@@ -232,7 +232,9 @@ class ApiCall:
         self.date = date.strftime("%Y%m%dT%H%M%SZ")
         self.datestamp = date.strftime("%Y%m%d")
 
-    def get_url(self, call: str, encoded_request_params: EncodedCallParameters = None) -> str:
+    def get_url(
+        self, call: str, encoded_request_params: EncodedCallParameters = None
+    ) -> str:
         value = self.endpoint
         if self.method == "GET":
             value += f"?{encoded_request_params}"
@@ -318,7 +320,9 @@ class ApiCall:
         request_params["Action"] = call
         if "Version" not in request_params:
             request_params["Version"] = self.version
-        encoded_request_params = cast(EncodedCallParameters, urllib.parse.urlencode(request_params))
+        encoded_request_params = cast(
+            EncodedCallParameters, urllib.parse.urlencode(request_params)
+        )
 
         # Calculate URL before encoded_request_params value is modified
         url = self.get_url(call, encoded_request_params)
@@ -341,7 +345,9 @@ class ApiCall:
                 "x-amz-target": f'{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}',
             }
 
-            payload_hash = hashlib.sha256(encoded_request_params.encode("utf-8")).hexdigest()
+            payload_hash = hashlib.sha256(
+                encoded_request_params.encode("utf-8")
+            ).hexdigest()
             canonical_params = ""
         else:
             raise RuntimeError("Encoded call parameters could not be None")
@@ -363,8 +369,7 @@ class ApiCall:
             headers.update(
                 {
                     "Authorization": self.get_authorization_header(
-                        canonical_request,
-                        signed_headers,
+                        canonical_request, signed_headers,
                     )
                 }
             )
@@ -499,8 +504,7 @@ class JsonApiCall(ApiCall):
 
         if self.authentication_method == "accesskey":
             headers["Authorization"] = self.get_authorization_header(
-                canonical_request,
-                signed_headers,
+                canonical_request, signed_headers,
             )
 
         self.response = self.get_response(
@@ -543,14 +547,8 @@ class IcuCall(JsonApiCall):
                 value_pattern = re.compile(self.FILTERS_VALUES_STR % match.group(1))
                 values = [v for k, v in data.items() if re.match(value_pattern, k)]
                 if values:
-                    filters.append(
-                        cast(Tag,{
-                            "Name": v,
-                            "Values": values,
-                        }
-                    ))
+                    filters.append(cast(Tag, {"Name": v, "Values": values,}))
         return filters
-                    
 
 
 class DirectLinkCall(JsonApiCall):
@@ -605,7 +603,9 @@ class OSCCall(JsonApiCall):
     def get_canonical_uri(self, call: str) -> str:
         return f"/{self.API_NAME}/latest/{call}"
 
-    def get_url(self, call: str, encoded_request_params: EncodedCallParameters = None) -> str:
+    def get_url(
+        self, call: str, encoded_request_params: EncodedCallParameters = None
+    ) -> str:
         return "/".join([self.endpoint, self.get_canonical_uri(call)])
 
     def get_password_params(self) -> PasswordParams:
