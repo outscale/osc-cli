@@ -3,39 +3,56 @@ import hashlib
 import hmac
 import json
 import logging
-import pathlib
+from pathlib import Path
 import re
-import urllib
+from typing import Any, Dict, List, Mapping, Optional, cast
+from typing_extensions import TypedDict
+from dataclasses import dataclass, field
+import urllib.parse
 import defusedxml.ElementTree as ET
 import base64
 import fire
 import requests
+from requests.models import Response
 import xmltodict
 
 CANONICAL_URI = "/"
 CONFIGURATION_FILE = "config.json"
 CONFIGURATION_FOLDER = ".osc"
 CONFIGURATION_FOLDER_DEPRECATED = ".osc_sdk"
-CONF_PATHS = [
-    pathlib.Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE,
-    pathlib.Path.home() / CONFIGURATION_FOLDER_DEPRECATED / CONFIGURATION_FILE,
+CONF_PATHS: List[Path] = [
+    Path.home() / CONFIGURATION_FOLDER / CONFIGURATION_FILE,
+    Path.home() / CONFIGURATION_FOLDER_DEPRECATED / CONFIGURATION_FILE,
 ]
 DEFAULT_METHOD = "POST"
 DEFAULT_PROFILE = "default"
 DEFAULT_REGION = "eu-west-2"
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
 DEFAULT_AUTHENTICATION_METHOD = "accesskey"
-METHODS_SUPPORTED = ["GET", "POST"]
+METHODS_SUPPORTED = {"GET", "POST"}
 SDK_VERSION = "1.5"
 SSL_VERIFY = True
-SUCCESS_CODES = [200, 201, 202, 203, 204]
+SUCCESS_CODES = {200, 201, 202, 203, 204}
 USER_AGENT = "osc_sdk " + SDK_VERSION
 
 logger = logging.getLogger("osc_sdk")
 
 
+class Configuration(TypedDict):
+    method: str
+    access_key: str
+    secret_key: str
+    version: str
+    https: bool
+    region_name: str
+    ssl_verify: bool
+    client_certificate: str
+    endpoint: str
+    host: str
+
+
 class OscApiException(Exception):
-    def __init__(self, http_response):
+    def __init__(self, http_response: Response):
         super(OscApiException, self).__init__()
         self.status_code = http_response.status_code
         # Set error details
@@ -45,7 +62,7 @@ class OscApiException(Exception):
         self.request_id = None
         self._set(http_response)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Error --> status = {self.status_code}, "
             f"code = {self.error_code}, "
@@ -55,7 +72,7 @@ class OscApiException(Exception):
             f"request_id = {self.request_id}"
         )
 
-    def _set(self, http_response):
+    def _set(self, http_response: Response):
         content = http_response.content.decode()
         # In case it is JSON error format
         try:
@@ -100,66 +117,71 @@ class OscApiException(Exception):
                     setattr(self, attr, value)
 
 
-class ApiCall(object):
-    API_NAME = None
+@dataclass
+class ApiCall:
+    profile: str = DEFAULT_PROFILE
+    login: Optional[str] = None
+    password: Optional[str] = None
+    authentication_method: str = DEFAULT_AUTHENTICATION_METHOD
+
+    API_NAME: str = field(default="", init=False)
     CONTENT_TYPE = "application/x-www-form-urlencoded"
     REQUEST_TYPE = "aws4_request"
     SIG_ALGORITHM = "AWS4-HMAC-SHA256"
     SIG_TYPE = "AWS4"
 
-    def __init__(
-        self,
-        profile=DEFAULT_PROFILE,
-        login=None,
-        password=None,
-        authentication_method=DEFAULT_AUTHENTICATION_METHOD,
-    ):
-        self.setup_profile_options(profile)
-        self.setup_cmd_options(login, password, authentication_method)
-        self.check_options()
+    response: Optional[str] = field(default=None, init=False)
+    date: Optional[str] = field(default=None, init=False)
+    datestamp: Optional[str] = field(default=None, init=False)
 
-    def setup_profile_options(self, profile):
+    method: str = field(default="")
+
+    def __post_init__(self):
+        if not self.API_NAME:
+            raise RuntimeError("API_NAME is required and should not be empty")
+
+        self.setup_profile_options(self.profile)
+        self.check_authentication_options()
+
+        if self.method not in METHODS_SUPPORTED:
+            raise Exception(f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}.")
+
+
+    def setup_profile_options(self, profile: str):
         conf = get_conf(profile)
         self.method = conf.pop("method", DEFAULT_METHOD)
-        self.access_key = conf.pop("access_key", None)
-        self.secret_key = conf.pop("secret_key", None)
+        self.access_key = conf.pop("access_key")
+        self.secret_key = conf.pop("secret_key")
         self.version = conf.pop("version", DEFAULT_VERSION)
-        self.protocol = "https" if conf.pop("https", None) else "http"
+        self.protocol = "https" if conf.pop("https", False) else "http"
         self.region = conf.pop("region_name", DEFAULT_REGION)
         self.ssl_verify = conf.pop("ssl_verify", SSL_VERIFY)
         self.client_certificate = conf.get("client_certificate")
+
         endpoint = conf.get("endpoint")
-        host = conf.get("host")
+        host = conf.get("host", "")
         if endpoint:
             self.endpoint = endpoint
         elif host:
             self.endpoint = ".".join([self.API_NAME, self.region, host])
+        else:
+            raise RuntimeError("No endpoint found")
 
-        self.response = None
-        # These wil be set in _set_datestamp
-        self.date = None
-        self.datestamp = None
-
-    def setup_cmd_options(self, login, password, authentication_method):
-        self.authentication_method = authentication_method
-        self.login = login
-        self.password = password
-
-    def check_options(self):
-        if self.authentication_method not in ["accesskey", "password"]:
+    def check_authentication_options(self):
+        if self.authentication_method not in {"accesskey", "password"}:
             raise RuntimeError(
                 "Unsupported authentication method (accesskey or password)"
             )
         if self.authentication_method == "accesskey":
-            if self.access_key == None:
-                RuntimeError("Missing Access Key for authentication")
-            if self.secret_key == None:
-                RuntimeError("Missing Secret Key for authentication")
+            if self.access_key is None:
+                raise RuntimeError("Missing Access Key for authentication")
+            if self.secret_key is None:
+                raise RuntimeError("Missing Secret Key for authentication")
         if self.authentication_method == "password":
-            if self.login == None:
-                RuntimeError("Missing login for authentication")
-            if self.password == None:
-                RuntimeError("Missing password for authentication")
+            if self.login is None:
+                raise RuntimeError("Missing login for authentication")
+            if self.password is None:
+                raise RuntimeError("Missing password for authentication")
 
     @property
     def endpoint(self):
@@ -176,30 +198,18 @@ class ApiCall(object):
             self.__endpoint = value
             self.__host = parsed_url.netloc
         else:
-            self.__endpoint = "{}://{}".format(self.protocol, value)
+            self.__endpoint = f"{self.protocol}://{value}"
             self.__host = value
-
-    @property
-    def method(self):
-        return self._method
-
-    @method.setter
-    def method(self, method):
-        if method not in METHODS_SUPPORTED:
-            raise Exception(
-                "Wrong method {}. Supported: {}.".format(method, METHODS_SUPPORTED)
-            )
-        self._method = method
 
     def _set_datestamp(self):
         date = datetime.datetime.utcnow()
         self.date = date.strftime("%Y%m%dT%H%M%SZ")
         self.datestamp = date.strftime("%Y%m%d")
 
-    def get_url(self, call, request_params=None):
+    def get_url(self, _, request_params: Optional[str] = None):
         value = self.endpoint
         if self.method == "GET":
-            value += "?{}".format(request_params)
+            value += f"?{request_params}"
         return value
 
     def get_canonical_uri(self, call):
@@ -260,7 +270,7 @@ class ApiCall(object):
                 return {prefix: ""}
             return {prefix: str(data)}
 
-    def make_request(self, call, *args, **kwargs):
+    def make_request(self, call, **kwargs):
         self._set_datestamp()
 
         # Calculate request params
@@ -290,15 +300,13 @@ class ApiCall(object):
                 "content-type": self.CONTENT_TYPE,
                 "host": self.host,
                 "x-amz-date": self.date,
-                "x-amz-target": "{}_{}.{}".format(
-                    self.API_NAME, datetime.date.today().strftime("%Y%m%d"), call
-                ),
+                "x-amz-target": f"{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}"
             }
 
             payload_hash = hashlib.sha256(request_params.encode("utf-8")).hexdigest()
             canonical_params = ""
 
-        canonical_headers = "".join("{}:{}\n".format(k, v) for k, v in headers.items())
+        canonical_headers = "".join(f"{k}:{v}\n" for k, v in headers.items())
         signed_headers = ";".join(headers)
         canonical_request = "\n".join(
             [
@@ -340,7 +348,7 @@ class XmlApiCall(ApiCall):
         try:
             response = xmltodict.parse(http_response.content)
         except Exception:
-            response = "Unable to parse response: '{}'".format(http_response.text)
+            response = f"Unable to parse response: '{http_response.text}'"
         return response
 
 
@@ -412,7 +420,7 @@ class JsonApiCall(ApiCall):
         }
         return signed_headers, canonical_headers, headers
 
-    def make_request(self, call, *args, **kwargs):
+    def make_request(self, call, **kwargs):
         self._set_datestamp()
 
         request_params = self.get_parameters(kwargs, call)
@@ -515,7 +523,7 @@ class OSCCall(JsonApiCall):
     SIG_TYPE = "OSC4"
     SERVICE = "OutscaleService"
 
-    def get_parameters(self, data, call):
+    def get_parameters(self, data: Dict[str, Any], call: str) -> Dict[str, Any]:
         parameters = {}
         for k, v in data.items():
             self.format_data(parameters, k, v)
@@ -534,18 +542,18 @@ class OSCCall(JsonApiCall):
             )
 
     def get_canonical_uri(self, call):
-        return "/{}/latest/{}".format(self.API_NAME, call)
+        return f"/{self.API_NAME}/latest/{call}"
 
-    def get_url(self, call, request_params=None):
+    def get_url(self, call, _):
         return "/".join([self.endpoint, self.get_canonical_uri(call)])
 
     def get_password_params(self):
         # Don't put any auth parameters in body
         return {}
 
-    def build_basic_auth(self):
+    def build_basic_auth(self) -> Dict:
         if self.authentication_method == "password":
-            creds = "{}:{}".format(self.login, self.password)
+            creds = f"{self.login}:{self.password}"
             basic_auth = "Basic {}".format(
                 base64.urlsafe_b64encode(creds.encode("utf-8")).decode("utf-8")
             )
@@ -555,9 +563,9 @@ class OSCCall(JsonApiCall):
     def build_headers(self, target, json_parameters):
         signed_headers = "host;x-osc-date;x-osc-target"
         canonical_headers = (
-            "host:{}\n"
-            "x-osc-date:{}\n"
-            "x-osc-target:{}\n".format(self.host, self.date, target)
+            f"host:{self.host}\n"
+            f"x-osc-date:{self.date}\n"
+            f"x-osc-target:{target}\n"
         )
         headers = {
             "Content-Type": self.CONTENT_TYPE,
@@ -570,28 +578,27 @@ class OSCCall(JsonApiCall):
         return signed_headers, canonical_headers, headers
 
 
-def get_conf(profile):
+def get_conf(profile: str) -> Configuration:
     # Check which conf_path is used.
     conf_path = next((path for path in CONF_PATHS if path.exists()), None)
 
     if not conf_path:
         raise RuntimeError("No configuration file found in home folder")
 
-    conf = json.loads(conf_path.read_text())
+    conf = cast(Mapping[str, Configuration], json.loads(conf_path.read_text()))
     try:
         return conf[profile]
     except KeyError:
-        raise RuntimeError("Profile {} not found in configuration file".format(profile))
+        raise RuntimeError(f"Profile {profile} not found in configuration file")
 
 
 def api_connect(
-    service,
-    call,
-    profile=DEFAULT_PROFILE,
-    login=None,
-    password=None,
-    authentication_method=DEFAULT_AUTHENTICATION_METHOD,
-    *args,
+    service: str,
+    call: str,
+    profile: str = DEFAULT_PROFILE,
+    login: Optional[str] = None,
+    password: Optional[str] = None,
+    authentication_method: str = DEFAULT_AUTHENTICATION_METHOD,
     **kwargs,
 ):
     calls = {
@@ -604,7 +611,7 @@ def api_connect(
         "okms": OKMSCall,
     }
     handler = calls[service](profile, login, password, authentication_method)
-    handler.make_request(call, *args, **kwargs)
+    handler.make_request(call, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
 
