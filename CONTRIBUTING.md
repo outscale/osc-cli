@@ -22,6 +22,7 @@ Use the same issue tracker to report problems with the documentation.
 Pre-requisites:
 - An Outscale account
 - At least 50 AccessKeys in your quota
+- [pre-commit](https://github.com/pre-commit/pre-commit-hooks) installed
 
 Setup:
 - Fill a valid `default` profile in `~/.osc/config.json`
