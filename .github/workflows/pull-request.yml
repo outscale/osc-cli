@@ -55,6 +55,12 @@ jobs:
         python-version: '3.8'
     - name: Install dependencies
       run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
     - name: Test python package building
       run: make build
   tests-python-3-9:
