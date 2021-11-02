@@ -4,7 +4,7 @@ WHICH_LINUX=2010
 # go https://github.com/niess/python-appimage/releases for the list
 PY_MAJ=3
 PY_MID=9
-PY_MIN=6
+PY_MIN=7
 PY_VER=$(PY_MAJ).$(PY_MID)
 PY_CP=cp$(PY_MAJ)$(PY_MID)
 PY_STR=python$(PY_VER)
