@@ -4,6 +4,7 @@ all: help
 help:
 	@echo "Available targets:"
 	@echo "- build: python package building"
+	@echo "- package: package osc-cli for various platforms"
 	@echo "- test: run all tests"
 	@echo "- test-pre-commit: run pre-commit tests"
 	@echo "- test-pylint: check code with pylint"
@@ -11,6 +12,10 @@ help:
 	@echo "- test-mypy: run typing tests"
 	@echo "- test-int: run integration tests"
 	@echo "- clean: clean temp files, venv, etc"
+
+.PHONY: package
+package:
+	cd pkg && ./configure && make
 
 .PHONY: test
 test: clean test-pre-commit test-pylint test-bandit test-mypy test-int build
