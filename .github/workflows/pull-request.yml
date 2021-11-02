@@ -1,0 +1,97 @@
+name: Pull Request Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  tests-python-3-6:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
+    - name: Test python package building
+      run: make build
+  tests-python-3-7:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
+    - name: Test python package building
+      run: make build
+  tests-python-3-8:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Test python package building
+      run: make build
+  tests-python-3-9:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
+    - name: Test python package building
+      run: make build
+  tests-python-3-10:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
+    - name: Test python package building
+      run: make build
