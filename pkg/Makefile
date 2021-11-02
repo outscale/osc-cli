@@ -1,16 +1,9 @@
-# either 1, 2010 or 2014
-WHICH_LINUX=2010
-
-# go https://github.com/niess/python-appimage/releases for the list
-PY_MAJ=3
-PY_MID=9
-PY_MIN=7
-PY_VER=$(PY_MAJ).$(PY_MID)
-PY_CP=cp$(PY_MAJ)$(PY_MID)
-PY_STR=python$(PY_VER)
-PY_TARGET="$(PY_STR).$(PY_MIN)-$(PY_CP)-$(PY_CP)-manylinux$(WHICH_LINUX)_x86_64.AppImage"
+include config.mk
 
 all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip
+
+config.mk:
+	$(if $(wildcard $@),,@echo "Please run ./configure." && exit 1)
 
 $(PY_TARGET):
 	wget https://github.com/niess/python-appimage/releases/download/$(PY_STR)/$(PY_TARGET)
@@ -54,3 +47,5 @@ osc-cli:
 
 clean:
 	rm -rvf *AppImage* osc-cli.AppDir osc-cli.zip osc-cli
+
+.PHONY: clean all

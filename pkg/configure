@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# go https://github.com/niess/python-appimage/releases for the list
+
+PY_MAJ=3
+PY_MID=9
+ARCH_OLD=2010
+ARCH_TARGET=x86_64
+
+for arg in $@; do
+    if [ "--help" = $arg ]; then
+	echo "./configure:"
+	echo "	--help				like seriously ?"
+	echo "	--py3_ver=6-10			choose python3 version"
+	echo "	--arch_old=2010|2014|1		choose how oldness of linux targets"
+	return 0
+    fi
+    if [ "--py3_ver" = $( echo "$arg" | cut -d '=' -f 1) ]; then
+ 	PY_MID=$( echo $arg | cut -f 2 -d '=' )
+	echo "PREFIX FOUND IT'S: "$PY_MAJ
+    fi
+    if [ "--arch_old" = $( echo "$arg" | cut -d '=' -f 1) ]; then
+ 	ARCH_OLD=$( echo $arg | cut -f 2 -d '=' )
+	echo "ARCH TARGET FOUND IT'S: "$ARCH_OLD"(must be eitehr 1, 2010 or 2014)"
+    fi
+
+done
+
+PY_VER=${PY_MAJ}.${PY_MID}
+PY_STR=python${PY_VER}
+
+PY_TARGET=$(curl --silent "https://api.github.com/repos/niess/python-appimage/releases" | grep AppImage | grep $PY_MAJ.$PY_MID | grep manylinux${ARCH_OLD}_${ARCH_TARGET} | grep name | cut -d '"' -f 4)
+
+echo PY_VER=$PY_VER > config.mk
+echo PY_STR=$PY_STR >> config.mk
+echo -n PY_MIN= >> config.mk
+echo $PY_TARGET | cut -d '.' -f 3 | cut -d '-' -f 1 >> config.mk
+echo PY_TARGET=$PY_TARGET >> config.mk
+
+
+echo "config done:"
+cat config.mk
