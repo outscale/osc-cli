@@ -369,7 +369,8 @@ class ApiCall:
             headers.update(
                 {
                     "Authorization": self.get_authorization_header(
-                        canonical_request, signed_headers,
+                        canonical_request,
+                        signed_headers,
                     )
                 }
             )
@@ -504,7 +505,8 @@ class JsonApiCall(ApiCall):
 
         if self.authentication_method == "accesskey":
             headers["Authorization"] = self.get_authorization_header(
-                canonical_request, signed_headers,
+                canonical_request,
+                signed_headers,
             )
 
         self.response = self.get_response(
@@ -547,7 +549,15 @@ class IcuCall(JsonApiCall):
                 value_pattern = re.compile(self.FILTERS_VALUES_STR % match.group(1))
                 values = [v for k, v in data.items() if re.match(value_pattern, k)]
                 if values:
-                    filters.append(cast(Tag, {"Name": v, "Values": values,}))
+                    filters.append(
+                        cast(
+                            Tag,
+                            {
+                                "Name": v,
+                                "Values": values,
+                            },
+                        )
+                    )
         return filters
 
 
