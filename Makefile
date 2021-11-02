@@ -8,11 +8,12 @@ help:
 	@echo "- test-pre-commit: run pre-commit tests"
 	@echo "- test-pylint: check code with pylint"
 	@echo "- test-bandit: security check with bandit"
+	@echo "- test-mypy: run typing tests"
 	@echo "- test-int: run integration tests"
 	@echo "- clean: clean temp files, venv, etc"
 
 .PHONY: test
-test: clean test-pre-commit test-pylint test-bandit test-int build
+test: clean test-pre-commit test-pylint test-bandit test-mypy test-int build
 	@echo "All tests OK"
 
 .PHONY: test-pre-commit
@@ -26,6 +27,10 @@ test-pylint: .venv/ok
 .PHONY: test-bandit
 test-bandit: .venv/ok
 	@./tests/test_bandit.sh
+
+.PHONY: test-mypy
+test-mypy:
+	./tests/test_mypy.sh
 
 .PHONY: test-int
 test-int: .venv/ok
