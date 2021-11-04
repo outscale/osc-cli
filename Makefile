@@ -15,7 +15,7 @@ help:
 
 .PHONY: package
 package:
-	cd pkg && ./configure && make
+	cd pkg && make
 
 .PHONY: test
 test: clean test-pre-commit test-pylint test-bandit test-mypy test-int build
