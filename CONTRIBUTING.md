@@ -41,17 +41,18 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 
 # How to release
 
-- Be sure to be rebased on `master` branch
-- Edit `osc_sdk/sdk.py` and update `SDK_VERSION` following [semantic versioning 2.0.0](https://semver.org/)
+- Be sure to fetch upstream master `git fetch origin`
+- Create new release branch `git branch -b v1.x.x origin/master` following [semantic versioning 2.0.0](https://semver.org/)
+- Edit `osc_sdk/sdk.py` and update `SDK_VERSION`
 - Update `setup.py` to update `version`
 - Run all tests with `make test`
 - Build with `make build`. Make sure you have`dist/osc_sdk-1.x-py2.py3-none-any.whl` and `dist/osc-sdk-1.x.tar.gz`.
-- Go to `pkg` folder and run `./configure && make`. Make sure you have `osc-cli-x86_64.zip` and `osc-cli-x86_64.AppImage` (you will need either docker or packman).
-- Commit release update: `git commit -am "osc-cli v1.x.x"`
-- Tag new release `git tag v1.x.x`
-- Push release to new branch `git push --tags outscale master:v1.x.x`
+- Package with `make package`. Make sure you have `pkg/osc-cli-x86_64.zip` and `pkg/osc-cli-x86_64.AppImage` (you will need either docker or packman).
+- Commit release update: `git commit -asm "osc-cli v1.x.x"`
+- Push release to new branch `git push origin v1.x.x`
 - Create PR to run github actions and get validation
 - Make the PR reviewed
+- Tag new release `git tag v1.x.x` and push tag `git push --tags outscale`
 - Create release page
 - Add major change to release page
 - Upload artifacts in release page:
