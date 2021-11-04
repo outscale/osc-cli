@@ -3,7 +3,7 @@ include config.mk
 all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip
 
 config.mk:
-	$(if $(wildcard $@),,@echo "Please run ./configure." && exit 1)
+	$(if $(wildcard $@),,@echo "auto run ./configure. to create default conf" && sleep 2 && ./configure)
 
 $(PY_TARGET):
 	wget https://github.com/niess/python-appimage/releases/download/$(PY_STR)/$(PY_TARGET)
