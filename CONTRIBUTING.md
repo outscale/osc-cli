@@ -46,7 +46,7 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 - Update `setup.py` to update `version`
 - Run all tests with `make test`
 - Build with `make build`. Make sure you have`dist/osc_sdk-1.x-py2.py3-none-any.whl` and `dist/osc-sdk-1.x.tar.gz`.
-- Go to `pkg` folder and run `./configure && make`. Make sure you have `osc-cli-x86_64.zip` and `osc-cli-x86_64.AppImage` (you will need either docker or packman).
+- Package with `make package`. Make sure you have `pkg/osc-cli-x86_64.zip` and `pkg/osc-cli-x86_64.AppImage` (you will need either docker or packman).
 - Commit release update: `git commit -am "osc-cli v1.x.x"`
 - Tag new release `git tag v1.x.x`
 - Push release to new branch `git push --tags outscale master:v1.x.x`
