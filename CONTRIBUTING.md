@@ -42,7 +42,7 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 # How to release
 
 - Be sure to fetch upstream master `git fetch origin`
-- Create new release branch `git branch -b v1.x.x origin/master` following [semantic versioning 2.0.0](https://semver.org/)
+- Create new release branch `git checkout -b v1.x.x origin/master` following [semantic versioning 2.0.0](https://semver.org/)
 - Edit `osc_sdk/sdk.py` and update `SDK_VERSION`
 - Update `setup.py` to update `version`
 - Run all tests with `make test`
