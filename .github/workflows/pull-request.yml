@@ -14,9 +14,9 @@ jobs:
     - name: Package bdist
       run: make build
     - name: Package AppImage
-      run: cd pkg && ./configure && make osc-cli-x86_64.AppImage
+      run: cd pkg && make osc-cli-x86_64.AppImage
     - name: Package for Windows
-      run: cd pkg && ./configure && make osc-cli-x86_64.zip
+      run: cd pkg && make osc-cli-x86_64.zip
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
