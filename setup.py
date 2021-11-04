@@ -26,10 +26,10 @@ setup(
     install_requires=[
         "setuptools",
         'dataclasses>=0.8; python_version < "3.7"',
-        "defusedxml==0.7.1",
-        "fire==0.1.3",
-        "requests==2.26.0",
+        "defusedxml>=0.7.1",
+        "fire>=0.1.3",
+        "requests>=2.26.0",
         "typing_extensions>=3.10.0.2",
-        "xmltodict==0.11.0",
+        "xmltodict>=0.11.0",
     ],
 )
