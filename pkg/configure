@@ -6,6 +6,7 @@ PY_MAJ=3
 PY_MID=9
 ARCH_OLD=2010
 ARCH_TARGET=x86_64
+SUDO=""
 
 for arg in $@; do
     if [ "--help" = $arg ]; then
@@ -14,6 +15,9 @@ for arg in $@; do
 	echo "	--py3_ver=6-10			choose python3 version"
 	echo "	--arch_old=2010|2014|1		choose how oldness of linux targets"
 	return 0
+    fi
+    if [ "--sudo-docker" = $arg ]; then
+	SUDO="sudo"
     fi
     if [ "--py3_ver" = $( echo "$arg" | cut -d '=' -f 1) ]; then
  	PY_MID=$( echo $arg | cut -f 2 -d '=' )
@@ -36,7 +40,7 @@ echo PY_STR=$PY_STR >> config.mk
 echo -n PY_MIN= >> config.mk
 echo $PY_TARGET | cut -d '.' -f 3 | cut -d '-' -f 1 >> config.mk
 echo PY_TARGET=$PY_TARGET >> config.mk
-
+echo SUDO=$SUDO >> config.mk
 
 echo "config done:"
 cat config.mk

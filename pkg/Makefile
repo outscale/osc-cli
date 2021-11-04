@@ -43,7 +43,7 @@ osc-cli-x86_64.zip: osc-cli
 	zip -r osc-cli-x86_64.zip osc-cli
 
 osc-cli:
-	docker run --rm -v ${PWD}/..:/src outscale/wine-pyinstaller:0.0.1 --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
+	$(SUDO) docker run --rm -v ${PWD}/..:/src outscale/wine-pyinstaller:0.0.1 --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
 
 clean:
 	rm -rvf *AppImage* osc-cli.AppDir osc-cli.zip osc-cli
