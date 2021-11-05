@@ -60,8 +60,9 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
   - `osc-sdk-1.x.tar.gz`
   - `osc-cli-x86_64.zip`
   - `osc-cli-x86_64.AppImage`
-- Check that auto-build workflow has published package to pip
-- Update homebrew:
-  - Update [osc-cli's brew formula](https://github.com/Homebrew/homebrew-core/blob/master/Formula/osc-cli.rb#L6)
-  - Update dependencies with `brew update-python-resources osc-cli`
+- Check that auto-build workflow has published package to pip. If not, manually upload files.
+- Check that homebrew has auto-updated with `brew install osc-cli`. If not:
+  - Fork and clone [homebrew-core](https://github.com/Homebrew/homebrew-core)
+  - Edit `Formula/osc-cli.rb` and update `url` field based on latest [osc-sdk-1.x.x.tar.gz's url](https://pypi.org/project/osc-sdk/#files)
+  - Update dependencies with `brew update-python-resources ./Formula/osc-cli.rb`
   - Create PR and follow asked instructions in template
