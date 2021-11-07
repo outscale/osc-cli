@@ -6,7 +6,7 @@ import json
 import logging
 import re
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 
@@ -74,7 +74,7 @@ class Tag(TypedDict):
 
 @dataclass
 class OscApiException(Exception):
-    http_response: Response
+    http_response: InitVar[Response]
 
     status_code: int = field(init=False)
     error_code: Optional[str] = field(default=None, init=False)
