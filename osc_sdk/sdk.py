@@ -160,56 +160,43 @@ class ApiCall:
     date: Optional[str] = field(default=None, init=False)
     datestamp: Optional[str] = field(default=None, init=False)
 
-    method: str = field(default="", init=False)
-    endpoint: str = field(default="", init=False)
-    host: str = field(default="", init=False)
-    access_key: Optional[str] = field(default=None, init=False)
-    secret_key: Optional[str] = field(default=None, init=False)
-    version: str = field(default=DEFAULT_VERSION, init=False)
-    protocol: str = field(default="", init=False)
-    region: str = field(default=DEFAULT_REGION, init=False)
-    ssl_verify: bool = field(default=SSL_VERIFY, init=False)
-    client_certificate: Optional[str] = field(default=None, init=False)
+    method: str = ""
+    endpoint: str = ""
+    host: str = ""
+    access_key: Optional[str] = None
+    secret_key: Optional[str] = None
+    version: str = DEFAULT_VERSION
+    https: bool = False
+    protocol: str = ""
+    region_name: str = DEFAULT_REGION
+    ssl_verify: bool = SSL_VERIFY
+    client_certificate: Optional[str] = None
 
     def __post_init__(self):
         if not self.API_NAME:
             raise RuntimeError("API_NAME is required and should not be empty")
 
-        self.setup_profile_options(self.profile)
         self.check_authentication_options()
 
-    def setup_profile_options(self, profile: str):
-        conf = get_conf(profile)
-
-        self.method = conf.get("method", DEFAULT_METHOD)
         if self.method not in METHODS_SUPPORTED:
             raise Exception(
                 f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}."
             )
 
-        self.access_key = conf.get("access_key")
-        self.secret_key = conf.get("secret_key")
-        self.version = conf.get("version", DEFAULT_VERSION)
-        self.protocol = "https" if conf.get("https", False) else "http"
-        self.region = conf.get("region_name", DEFAULT_REGION)
-        self.ssl_verify = conf.get("ssl_verify", SSL_VERIFY)
-        self.client_certificate = conf.get("client_certificate")
+        self.protocol = "https" if self.https else "http"
 
-        endpoint = conf.get("endpoint")
-        host = conf.get("host", "")
-        if host and not endpoint:
-            endpoint = ".".join([self.API_NAME, self.region, host])
+        if self.host and not self.endpoint:
+            self.endpoint = ".".join([self.API_NAME, self.region_name, self.host])
 
-        if not endpoint:
+        if not self.endpoint:
             raise RuntimeError("No endpoint found")
 
-        parsed_url = urllib.parse.urlparse(endpoint)
+        parsed_url = urllib.parse.urlparse(self.endpoint)
         if parsed_url.scheme:
-            self.endpoint = endpoint
             self.host = parsed_url.netloc
         else:
-            self.endpoint = f"{self.protocol}://{endpoint}"
-            self.host = endpoint
+            self.host = self.endpoint
+            self.endpoint = f"{self.protocol}://{self.endpoint}"
 
     def check_authentication_options(self):
         if self.authentication_method not in {"accesskey", "password"}:
@@ -251,7 +238,12 @@ class ApiCall:
         if not self.secret_key:
             raise RuntimeError("Secret key is needed to authorize call")
 
-        credentials = [self.datestamp, self.region, self.API_NAME, self.REQUEST_TYPE]
+        credentials = [
+            self.datestamp,
+            self.region_name,
+            self.API_NAME,
+            self.REQUEST_TYPE,
+        ]
         credential_scope = "/".join(credentials)
         string_to_sign = "\n".join(
             [
@@ -682,7 +674,9 @@ def api_connect(
         "lbu": LbuCall,
         "okms": OKMSCall,
     }
-    handler = calls[service](profile, login, password, authentication_method)
+    handler = calls[service](
+        profile, login, password, authentication_method, **get_conf(profile)
+    )
     handler.make_request(call, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
