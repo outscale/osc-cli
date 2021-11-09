@@ -7,6 +7,6 @@ mypy-extensions==0.4.3
 pylint==2.11.1
 requests==2.26.0
 types-dataclasses==0.6.1
-types-requests==2.25.11
+types-requests==2.25.12
 typing_extensions==3.10.0.2
 xmltodict==0.12.0
