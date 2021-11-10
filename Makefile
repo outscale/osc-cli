@@ -11,6 +11,7 @@ help:
 	@echo "- test-bandit: security check with bandit"
 	@echo "- test-mypy: run typing tests"
 	@echo "- test-int: run integration tests"
+	@echo "- test-pytest: run unit-tests"
 	@echo "- clean: clean temp files, venv, etc"
 
 .PHONY: package
@@ -18,7 +19,7 @@ package:
 	cd pkg && make
 
 .PHONY: test
-test: clean test-pre-commit test-pylint test-bandit test-mypy test-int build
+test: clean test-pre-commit test-pylint test-bandit test-mypy test-int test-pytest build
 	@echo "All tests OK"
 
 .PHONY: test-pre-commit
@@ -40,6 +41,10 @@ test-mypy:
 .PHONY: test-int
 test-int: .venv/ok
 	./tests/test_int.sh
+
+.PHONY: test-pytest
+test-pytest: .venv/ok
+	./tests/test_pytest.sh
 
 .PHONY: build
 build: .venv/ok
