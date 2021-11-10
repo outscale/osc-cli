@@ -160,7 +160,7 @@ class ApiCall:
     date: Optional[str] = field(default=None, init=False)
     datestamp: Optional[str] = field(default=None, init=False)
 
-    method: str = ""
+    method: str = DEFAULT_METHOD
     endpoint: str = ""
     host: str = ""
     access_key: Optional[str] = None
