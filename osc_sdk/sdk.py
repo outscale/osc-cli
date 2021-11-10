@@ -166,7 +166,7 @@ class ApiCall:
     access_key: Optional[str] = None
     secret_key: Optional[str] = None
     version: str = DEFAULT_VERSION
-    https: bool = False
+    https: bool = True
     protocol: str = ""
     region_name: str = DEFAULT_REGION
     ssl_verify: bool = SSL_VERIFY
