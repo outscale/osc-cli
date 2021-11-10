@@ -43,6 +43,8 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
     - name: Test python package building
       run: make build
   tests-python-3-7:
@@ -62,6 +64,8 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
     - name: Test python package building
       run: make build
   tests-python-3-8:
@@ -81,6 +85,8 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
     - name: Test python package building
       run: make build
   tests-python-3-9:
@@ -100,6 +106,8 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
     - name: Test python package building
       run: make build
   tests-python-3-10:
@@ -119,5 +127,7 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
     - name: Test python package building
       run: make build
