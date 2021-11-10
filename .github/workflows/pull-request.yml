@@ -43,6 +43,13 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-7:
@@ -62,6 +69,13 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-8:
@@ -81,6 +95,13 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-9:
@@ -100,6 +121,13 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-10:
@@ -119,5 +147,12 @@ jobs:
       run: make test-bandit
     - name: Test typing - mypy
       run: make test-mypy
+    - name: Test pytest
+      run: make test-pytest
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
