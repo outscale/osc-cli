@@ -9,5 +9,5 @@ pytest==6.2.5
 requests==2.26.0
 types-dataclasses==0.6.1
 types-requests==2.25.11
-typing_extensions==3.10.0.2
+typing_extensions==4.0.0
 xmltodict==0.12.0
