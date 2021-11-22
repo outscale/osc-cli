@@ -12,6 +12,7 @@ help:
 	@echo "- test-mypy: run typing tests"
 	@echo "- test-int: run integration tests"
 	@echo "- test-pytest: run unit-tests"
+	@echo "- pypi-upload: upload package to pypi (be careful)"
 	@echo "- clean: clean temp files, venv, etc"
 
 .PHONY: package
@@ -49,6 +50,10 @@ test-pytest: .venv/ok
 .PHONY: build
 build: .venv/ok
 	@./tests/build.sh
+
+.PHONY: pypi-upload
+pypi-upload: .venv/ok
+	. .venv/bin/activate && twine upload dist/*
 
 .venv/ok:
 	@./tests/setup_venv.sh
