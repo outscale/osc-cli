@@ -52,16 +52,16 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 - Push release to new branch `git push origin v1.x.x`
 - Create PR to run github actions and get validation
 - Make the PR reviewed
-- Tag new release `git tag v1.x.x` and push tag `git push --tags outscale`
+- Tag new release `git tag v1.x.x` and push tag `git push --tags osc`
 - Create release page
 - Add major change to release page
 - Upload artifacts in release page:
-  - `osc_sdk-1.x-py2.py3-none-any.whl`
-  - `osc-sdk-1.x.tar.gz`
-  - `osc-cli-x86_64.zip`
-  - `osc-cli-x86_64.AppImage`
+  - `dist/osc_sdk-1.x-py2.py3-none-any.whl`
+  - `dist/osc-sdk-1.x.tar.gz`
+  - `pkg/osc-cli-x86_64.zip`
+  - `pkg/osc-cli-x86_64.AppImage`
 - Check that auto-build workflow has published package to pip. If not, manually upload files.
-- Check that homebrew has auto-updated with `brew install osc-cli`. If not:
+- Check that homebrew has auto-updated with `brew install osc-cli` or check [commit history](https://github.com/Homebrew/homebrew-core/commits/master/Formula/osc-cli.rb), note brew's bot can take time. If not:
   - Fork and clone [homebrew-core](https://github.com/Homebrew/homebrew-core)
   - Edit `Formula/osc-cli.rb` and update `url` field based on latest [osc-sdk-1.x.x.tar.gz's url](https://pypi.org/project/osc-sdk/#files)
   - Update dependencies with `brew update-python-resources ./Formula/osc-cli.rb`
