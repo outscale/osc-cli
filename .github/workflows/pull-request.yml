@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   tests-packaging:
     runs-on: ubuntu-latest
@@ -161,3 +165,18 @@ jobs:
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
+  dependabot-auto-merge:
+    needs: [tests-packaging, tests-python-3-6, tests-python-3-7, tests-python-3-8, tests-python-3-9, tests-python-3-10]
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1.1.1
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Auto-merge
+        run: gh pr merge --auto --rebase "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
