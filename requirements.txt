@@ -8,6 +8,6 @@ pylint==2.12.2
 pytest==6.2.5
 requests==2.27.1
 types-dataclasses==0.6.4
-types-requests==2.27.5
+types-requests==2.27.6
 typing_extensions==4.0.1
 xmltodict==0.12.0
