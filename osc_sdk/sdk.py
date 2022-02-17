@@ -30,6 +30,9 @@ DEFAULT_PROFILE = "default"
 DEFAULT_REGION = "eu-west-2"
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
 DEFAULT_AUTHENTICATION_METHOD = "accesskey"
+
+DEFAULT_HOST = "outscale.com"
+
 METHODS_SUPPORTED = {"GET", "POST"}
 SDK_VERSION = "1.7.1"
 SSL_VERIFY = True
@@ -655,6 +658,12 @@ def get_conf(profile: str) -> Configuration:
         json_profile = json_profiles[v]
         if "region" in json_profile:
 
+            # use default stuffs only when "region" is use
+            # to keep region_name format retrocompatible
+            if not "host" in json_profile and not "endpoint" in json_profile:
+                json_profile["host"] = DEFAULT_HOST
+            if not "https" in json_profile:
+                json_profile["https"] = True
 
             if not "region_name" in json_profile:
                 json_profile["region_name"] = json_profile["region"]
