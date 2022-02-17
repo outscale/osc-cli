@@ -649,7 +649,17 @@ def get_conf(profile: str) -> Configuration:
     if not conf_path:
         raise RuntimeError("No configuration file found in home folder")
 
-    conf = cast(Mapping[str, Configuration], json.loads(conf_path.read_text()))
+    json_profiles = json.loads(conf_path.read_text())
+    # convert region to region_name in json to fit Mapping
+    for v in json_profiles:
+        json_profile = json_profiles[v]
+        if "region" in json_profile:
+
+
+            if not "region_name" in json_profile:
+                json_profile["region_name"] = json_profile["region"]
+            del json_profile["region"]
+    conf = cast(Mapping[str, Configuration], json_profiles)
     try:
         return conf[profile]
     except KeyError:
