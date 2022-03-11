@@ -2,7 +2,7 @@ bandit==1.7.1
 dataclasses==0.8; python_version < "3.7"
 defusedxml==0.7.1
 fire==0.4.0
-mypy==0.931
+mypy==0.940
 mypy-extensions==0.4.3
 pylint==2.12.2
 pytest==7.0.1
