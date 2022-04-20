@@ -4,7 +4,7 @@ defusedxml==0.7.1
 fire==0.4.0
 mypy==0.942
 mypy-extensions==0.4.3
-pylint==2.13.0
+pylint==2.13.7
 pytest==7.0.1
 requests==2.27.1
 types-dataclasses==0.6.4
