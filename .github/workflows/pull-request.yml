@@ -54,6 +54,7 @@ jobs:
         OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
+        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
@@ -81,6 +82,7 @@ jobs:
         OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
+        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
@@ -108,6 +110,7 @@ jobs:
         OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
+        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
@@ -135,6 +138,7 @@ jobs:
         OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
+        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
@@ -162,6 +166,7 @@ jobs:
         OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
+        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build

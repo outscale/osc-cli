@@ -17,6 +17,11 @@ if [ -z "$OSC_TEST_ENDPOINT_ICU" ]; then
     exit 1
 fi
 
+if [ -z "$OSC_TEST_ENDPOINT_FCU" ]; then
+    echo "OSC_TEST_ENDPOINT_FCU not set, aborting"
+    exit 1
+fi
+
 if [ -z "$OSC_TEST_REGION" ]; then
     echo "OSC_TEST_REGION not set, aborting"
     exit 1
