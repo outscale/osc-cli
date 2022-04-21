@@ -8,7 +8,7 @@ import re
 import urllib.parse
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import defusedxml.ElementTree as ET
 import fire
@@ -29,7 +29,6 @@ DEFAULT_METHOD = "POST"
 DEFAULT_PROFILE = "default"
 DEFAULT_REGION = "eu-west-2"
 DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
-DEFAULT_AUTHENTICATION_METHOD = "accesskey"
 
 DEFAULT_HOST = "outscale.com"
 
@@ -45,6 +44,31 @@ logger = logging.getLogger("osc_sdk")
 CallParameters = Dict[str, Any]
 EncodedCallParameters = Optional[str]
 Headers = Tuple[str, str, Dict[str, str]]
+
+NO_AUTH_CALLS: Dict[str, Set[str]] = {
+    "api": {
+        "ReadFlexibleGpuCatalog",
+        "ReadLocations",
+        "ReadNetAccessPointServices",
+        "ReadProductTypes",
+        "ReadPublicIpRanges",
+        "ReadRegions",
+        "ReadVmTypes",
+        "ResetAccountPassword",
+        "SendResetPasswordEmail",
+    },
+    "icu": {
+        "AuthenticateAccount",
+        "ResetAccountPassword",
+        "SendResetPasswordEmail",
+        "ReadPublicCatalog",
+        "CheckSignature",
+    },
+    "fcu": {
+        "DescribeRegions",
+        "ReadPublicIpRanges",
+    },
+}
 
 
 class Configuration(TypedDict):
@@ -151,7 +175,7 @@ class ApiCall:
     profile: str = DEFAULT_PROFILE
     login: Optional[str] = None
     password: Optional[str] = None
-    authentication_method: str = DEFAULT_AUTHENTICATION_METHOD
+    authentication_method: Optional[str] = None
 
     API_NAME: str = field(default="", init=False)
     CONTENT_TYPE = "application/x-www-form-urlencoded"
@@ -179,8 +203,6 @@ class ApiCall:
         if not self.API_NAME:
             raise RuntimeError("API_NAME is required and should not be empty")
 
-        self.check_authentication_options()
-
         if self.method not in METHODS_SUPPORTED:
             raise Exception(
                 f"Wrong method {self.method}. Supported: {METHODS_SUPPORTED}."
@@ -202,9 +224,9 @@ class ApiCall:
             self.endpoint = f"{self.protocol}://{self.endpoint}"
 
     def check_authentication_options(self):
-        if self.authentication_method not in {"accesskey", "password"}:
+        if self.authentication_method not in {"accesskey", "password", "none"}:
             raise RuntimeError(
-                "Unsupported authentication method (accesskey or password)"
+                "Unsupported authentication method (accesskey, password or none)"
             )
         if self.authentication_method == "accesskey":
             if self.access_key is None:
@@ -308,6 +330,14 @@ class ApiCall:
 
         # Calculate request params
         request_params = self.get_parameters(data=kwargs)
+
+        if self.authentication_method is None:
+            if call_need_auth(self.API_NAME, call):
+                self.authentication_method = "accesskey"
+            else:
+                self.authentication_method = "none"
+
+        self.check_authentication_options()
 
         if self.authentication_method == "password":
             request_params.update(self.get_password_params())
@@ -475,6 +505,14 @@ class JsonApiCall(ApiCall):
         self.set_datestamp()
 
         request_params = self.get_parameters(kwargs, call)
+
+        if self.authentication_method is None:
+            if call_need_auth(self.API_NAME, call):
+                self.authentication_method = "accesskey"
+            else:
+                self.authentication_method = "none"
+
+        self.check_authentication_options()
 
         if self.authentication_method == "password":
             request_params.update(self.get_password_params())
@@ -675,13 +713,17 @@ def get_conf(profile: str) -> Configuration:
         raise RuntimeError(f"Profile {profile} not found in configuration file")
 
 
+def call_need_auth(service: str, call: str) -> bool:
+    return call not in NO_AUTH_CALLS.get(service, set())
+
+
 def api_connect(
     service: str,
     call: str,
     profile: str = DEFAULT_PROFILE,
     login: Optional[str] = None,
     password: Optional[str] = None,
-    authentication_method: str = DEFAULT_AUTHENTICATION_METHOD,
+    authentication_method: Optional[str] = None,
     **kwargs: CallParameters,
 ):
     calls = {
@@ -693,6 +735,7 @@ def api_connect(
         "lbu": LbuCall,
         "okms": OKMSCall,
     }
+
     handler = calls[service](
         profile, login, password, authentication_method, **get_conf(profile)
     )
