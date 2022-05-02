@@ -1,0 +1,15 @@
+)
+		    eval ${prev}
+		    ;;
+		    *)
+			PROFILES=$(_mk_profiles)
+			COMPREPLY=($(compgen -W "api icu lbu directlink eim okms fcu $PROFILES --help --login= --password= --authentication_method=password --authentication_method=accesskey" -- ${cur}))
+		    ;;
+            esac
+            ;;
+    esac
+}
+
+complete -F _osc_cli osc-cli
+complete -F _osc_cli osc-cli-x86_64.AppImage
+complete -F _osc_cli ./osc-cli-x86_64.AppImage
