@@ -1,6 +1,6 @@
 include config.mk
 
-all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip
+all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip osc-cli-completion.bash
 
 config.mk:
 	$(if $(wildcard $@),,@echo "auto run ./configure. to create default conf" && sleep 2 && ./configure)
@@ -43,7 +43,62 @@ osc-cli-x86_64.zip: osc-cli
 osc-cli:
 	$(SUDO) docker run --rm -v ${PWD}/..:/src outscale/wine-pyinstaller:0.0.1 --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
 
+fcu.json:
+	curl -s https://git.unice.fr/com/foundation_email_edit/-/raw/8702ba3efcb35ab7c4d9240d620582cc52b79eeb/node_modulesold/aws-sdk-apis/apis/ec2-2014-06-15.api.json > fcu.json
+
+fcu.call_list: fcu.json
+	cat fcu.json | jq .operations | jq keys[]  --raw-output | xargs > fcu.call_list
+
+func.fcu.ec2-2014-06-15.txt: fcu.json fcu.call_list
+	echo -n "$$( cat fcu.call_list ) " \
+		| sed "sL L () \nLg"  > func.fcu.ec2-2014-06-15.txt
+
+args-vf.fcu.ec2-2014-06-15.txt:  fcu.json
+	cat fcu.json | jq .operations | jq .[].input | jq .members \
+		| jq keys | xargs | sed "s/ \] \[ / \n /g;s/, / --/g;s/^ /--/" \
+		| tr -d "[]" | xargs -I{} echo "====--{}@@@@" \
+		> args-vf.fcu.ec2-2014-06-15.txt
+
+osc-cli-completion-fcu.calls: func.fcu.ec2-2014-06-15.txt args-vf.fcu.ec2-2014-06-15.txt fcu.json
+	paste func.fcu.ec2-2014-06-15.txt args-vf.fcu.ec2-2014-06-15.txt \
+		| sed 's/====/{\n    COMPREPLY=($$(compgen -W " /; s/@@@@/" -- $${cur}))\n}/'\
+		> osc-cli-completion-fcu.calls
+
+osc-api.json:
+	curl -s https://raw.githubusercontent.com/outscale/osc-api/master/outscale.yaml | yq $(YQ_ARG) > osc-api.json
+
+osc-cli-completion.call_list: osc-api.json
+	$(JSON_SEARCH) operationId osc-api.json | tr -d "\n[]\"" | sed 's/,/ /g' >> osc-cli-completion.call_list
+
+config.sh:
+	echo alias JSON_SEARCH=$(JSON_SEARCH) > config.sh
+
+osc-cli-completion.calls: config.sh
+	echo "" > osc-cli-completion.calls
+	cat osc-cli-completion.call_list | sed 's/ /\n/g' | xargs -I {} ./mk_functions.sh {}
+
+osc-cli-completion.bash: osc-api.json osc-cli-completion.call_list osc-cli-completion.calls fcu.call_list osc-cli-completion-fcu.calls osc-cli-completion.bash-0 osc-cli-completion.bash-2
+	echo '#/usr/bin/env bash' > osc-cli-completion.bash
+	echo '# OUTSCALE API' >> osc-cli-completion.bash
+	cat osc-cli-completion.calls >> osc-cli-completion.bash
+	echo '# OUTSCALE FCU' >> osc-cli-completion.bash
+	cat osc-cli-completion-fcu.calls >> osc-cli-completion.bash
+	cat osc-cli-completion.bash-0 >> osc-cli-completion.bash
+	cat osc-cli-completion.call_list >> osc-cli-completion.bash
+	echo -e '" -- $${cur}))'"\n\t;;" >> osc-cli-completion.bash
+	echo -ne 'fcu)\nCOMPREPLY=($$(compgen -W ' >> osc-cli-completion.bash
+	echo -e "\"$$(cat fcu.call_list)\" -- \$${cur}))\n;;\n" >> osc-cli-completion.bash
+	echo "$$(cat fcu.call_list | sed 's/ / | /g'))" >> osc-cli-completion.bash
+	echo -e 'eval $${prev}\n;;' >> osc-cli-completion.bash
+	cat osc-cli-completion.call_list | sed 's/ / | /g' >> osc-cli-completion.bash
+	cat osc-cli-completion.bash-2 >> osc-cli-completion.bash
+
 clean:
-	rm -rvf *AppImage* osc-cli.AppDir osc-cli.zip osc-cli
+	rm -rvf appimagetool-x86_64.AppImage osc-cli-x86_64.AppImage python*AppImage\
+		osc-cli.AppDir osc-cli.zip osc-cli osc-cli-completion.bash\
+		osc-cli-completion.call_list \
+		osc-cli-completion.calls osc-api.json config.sh fcu.call_list fcu.json\
+		func.fcu.ec2-2014-06-15.txt args-vf.fcu.ec2-2014-06-15.txt\
+		osc-cli-completion-fcu.calls
 
 .PHONY: clean all
