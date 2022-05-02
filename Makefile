@@ -17,7 +17,7 @@ help:
 
 .PHONY: package
 package:
-	cd pkg && make
+	cd pkg && ./configure --wget-json-search && make
 
 .PHONY: test
 test: clean test-pre-commit test-pylint test-bandit test-mypy test-int test-pytest build
