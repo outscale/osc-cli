@@ -8,9 +8,31 @@ Official Outscale CLI providing connectors to Outscale API.
 
 ### Prerequisites
 
-You will need [Python 3.5+](https://www.python.org/) or later. Earlier versions including Python 2 are not supported.
+You will need [Python 3.6+](https://www.python.org/) or later. Earlier versions including Python 2 are not supported.
 
-### Installing from package
+### Installing on Macos
+
+osc-cli is available on [brew](https://formulae.brew.sh/formula/osc-cli).
+
+### Installing on Linux
+
+osc-cli is pre-packaged for Linux as a standalone [AppImage](https://appimage.org/).
+- Download `osc-cli-x86_64.AppImage` from latest version in [releases](https://github.com/outscale/osc-cli/releases).
+- Allow file to be executed by running `chmod a+x osc-cli-x86_64.AppImage`
+- Run osc-cli: `./osc-cli-x86_64.AppImage`
+
+Optionally, you can install it for all users: `sudo mv osc-cli-x86_64.AppImage /usr/local/bin/osc-cli` and just run `osc-cli`.
+
+### Installing on Windows
+
+osc-cli is pre-packaged for windows:
+- Download `osc-cli-x86_64.zip` from latest version in [releases](https://github.com/outscale/osc-cli/releases).
+- Extract zip archive and run `osc-cli.exe`
+
+Note that some antivirus may consider some files as a virus. Those are false positive.
+If you are worried about it, consider installing osc-cli from Python Package (see below).
+
+### Installing from Python package
 
 You can get the package from [pypi](https://pypi.org/project/osc-sdk/):
 ```
