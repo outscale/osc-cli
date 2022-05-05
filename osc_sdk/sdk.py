@@ -56,6 +56,7 @@ NO_AUTH_CALLS: Dict[str, Set[str]] = {
         "ReadVmTypes",
         "ResetAccountPassword",
         "SendResetPasswordEmail",
+        "ReadPublicCatalog",
     },
     "icu": {
         "AuthenticateAccount",
