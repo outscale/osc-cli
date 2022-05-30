@@ -22,7 +22,7 @@ osc-cli.AppDir/AppRun: osc-cli.AppDir/ $(PY_TARGET) osc-cli.AppDir/AppRun-py
 osc-cli.AppDir/done:
 	cd .. && pkg/osc-cli.AppDir/AppRun-py ./setup.py install --prefix=./pkg/osc-cli.AppDir/opt/$(PY_STR)/ --optimize=1
 	cd osc-cli.AppDir/ && \
-	for package in requests charset-normalizer urllib3 defusedxml fire xmltodict termcolor idna ; do  \
+	for package in requests charset-normalizer urllib3 defusedxml fire xmltodict termcolor idna typing_extensions ; do  \
 	PIP_CONFIG_FILE=/dev/null usr/bin/pip$(PY_VER) install --isolated --root="" --ignore-installed --no-deps $${package} \
 	; done
 	rm osc-cli.AppDir/$(PY_STR).$(PY_MIN).desktop
