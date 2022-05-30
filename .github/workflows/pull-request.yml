@@ -18,7 +18,9 @@ jobs:
     - name: Package bdist
       run: make build
     - name: Package AppImage
-      run: cd pkg && make osc-cli-x86_64.AppImage
+      run: |
+        cd pkg && make osc-cli-x86_64.AppImage
+        ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
     - name: Package for Windows
       run: cd pkg && make osc-cli-x86_64.zip
     - name: Upload artifacts
