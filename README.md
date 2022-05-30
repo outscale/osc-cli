@@ -23,6 +23,31 @@ osc-cli is pre-packaged for Linux as a standalone [AppImage](https://appimage.or
 
 Optionally, you can install it for all users: `sudo mv osc-cli-x86_64.AppImage /usr/local/bin/osc-cli` and just run `osc-cli`.
 
+#### Note:
+
+if you have this error (or one similar about fuse):
+```
+fuse: failed to exec fusermount: No such file or directory
+
+Cannot mount AppImage, please check your FUSE setup.
+You might still be able to extract the contents of this AppImage
+if you run it with the --appimage-extract option.
+See https://github.com/AppImage/AppImageKit/wiki/FUSE
+for more information
+open dir error: No such file or directory
+```
+
+You can either install fuse yourself, or execute the appimage with `--appimage-extract-and-run` option
+
+Example:
+```
+./osc-cli-x86_64.AppImage --appimage-extract-and-run osc-cli api ReadImages --profile=my
+```
+
+using `appimage-extract-and-run` extract the content of the AppImage in a temporary directory and execute it,
+this operation is a **lot** slower than using fuse, and the fuse solution should be use if posible.
+
+
 ### Installing on Windows
 
 osc-cli is pre-packaged for windows:
