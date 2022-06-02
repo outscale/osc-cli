@@ -85,6 +85,19 @@ class Configuration(TypedDict):
     host: str
 
 
+DEFAULT_CONF = cast(
+    Configuration,
+    {
+        "method": "POST",
+        "https": True,
+        "region_name": DEFAULT_REGION,
+        "ssl_verify": True,
+        "version": DEFAULT_VERSION,
+        "host": DEFAULT_HOST,
+    },
+)
+
+
 class PasswordParams(TypedDict, total=False):
     AuthenticationMethod: str
     Login: Optional[str]
@@ -689,7 +702,7 @@ def get_conf(profile: str) -> Configuration:
     conf_path = next((path for path in CONF_PATHS if path.exists()), None)
 
     if not conf_path:
-        raise RuntimeError("No configuration file found in home folder")
+        return DEFAULT_CONF
 
     json_profiles = json.loads(conf_path.read_text())
     # convert region to region_name in json to fit Mapping
@@ -711,7 +724,7 @@ def get_conf(profile: str) -> Configuration:
     try:
         return conf[profile]
     except KeyError:
-        raise RuntimeError(f"Profile {profile} not found in configuration file")
+        return DEFAULT_CONF
 
 
 def call_need_auth(service: str, call: str) -> bool:
