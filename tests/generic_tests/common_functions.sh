@@ -54,3 +54,20 @@ function setup_osc_config_file_no_auth {
     }
 EOF
 }
+
+function try_hard {
+    local cmd
+    local result
+    cmd=$@
+    result="unknown"
+    while true; do
+        set +e
+        $cmd
+        result=$?
+        set -e
+        if [[ "$result" == "0" ]]; then
+            break
+        fi
+        sleep $(( $RANDOM % 10 + 1 ))
+    done
+}

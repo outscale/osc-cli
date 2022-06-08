@@ -19,7 +19,6 @@ $c api ReadNets --authentication-method=bad &> /dev/null && { echo "API error"; 
 $c fcu DescribeVpcs --authentication-method=bad &> /dev/null && { echo "API error"; exit 1; }
 $c lbu DescribeLoadBalancers --authentication-method=bad &> /dev/null && { echo "LBU error"; exit 1; }
 $c eim ListServerCertificates --authentication-method=bad &> /dev/null && { echo "EIM error"; exit 1; }
-sleep 5
 $c icu ReadQuotas --authentication-method=bad &> /dev/null && { echo "ICU error"; exit 1; }
 $c directlink DescribeConnections --authentication-method=bad &> /dev/null && { echo "DirectLink error"; exit 1; }
 
