@@ -55,6 +55,14 @@ jobs:
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
         OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
+    - name: Integration tests
+      run: make test-int
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
+        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-7:
@@ -82,6 +90,14 @@ jobs:
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
         OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
+    - name: Integration tests
+      run: make test-int
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
+        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
@@ -111,6 +127,14 @@ jobs:
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
         OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
+    - name: Integration tests
+      run: make test-int
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
+        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-9:
@@ -139,6 +163,14 @@ jobs:
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
         OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
+    - name: Integration tests
+      run: make test-int
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
+        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build
   tests-python-3-10:
@@ -166,6 +198,14 @@ jobs:
         OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
         OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
         OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
+        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
+    - name: Integration tests
+      run: make test-int
+      env:
+        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
+        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
+        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
+        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
         OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
     - name: Test python package building
       run: make build

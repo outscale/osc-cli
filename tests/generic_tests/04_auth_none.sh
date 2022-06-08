@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+source common_functions.sh
 
 # Assuming you are running this from a prepared virtual environment
 PROJECT_ROOT=$(cd "$(dirname $0)/../.." && pwd)
@@ -19,12 +20,13 @@ if [ -z "$OSC_TEST_PASSWORD" ]; then
     exit 1
 fi
 
+setup_osc_config_file_accesskey
+
 # Test password auth
 $c icu ListAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null || { echo "login auth check error 1"; exit 1; }
 $c icu ListAccessKeys --authentication-method=password --login "BAD_LOGIN" --password "BAD_PASSWORD" &> /dev/null && { echo "login auth check error 2"; exit 1; }
 # Test accesskey auth
 $c api ReadVolumes --authentication-method=accesskey &> /dev/null || { echo "accesskey auth check error"; exit 1; }
-
 
 # On Outscale API, calls which do not require authentication also succeed when authenticated.
 $c api ReadRegions --authentication-method=accesskey &> /dev/null || { echo "api:ReadRegion error 1"; exit 1; }
