@@ -15,9 +15,8 @@ setup_osc_config_file_accesskey
 $c api ReadNets --authentication-method=accesskey &> /dev/null || { echo "API error"; exit 1; }
 $c fcu DescribeVpcs --authentication-method=accesskey &> /dev/null || { echo "FCU error"; exit 1; }
 $c lbu DescribeLoadBalancers --authentication-method=accesskey &> /dev/null || { echo "LBU error"; exit 1; }
-$c eim ListServerCertificates --authentication-method=accesskey &> /dev/null || { echo "EIM error"; exit 1; }
-sleep 5
-$c icu ReadQuotas --authentication-method=accesskey &> /dev/null || { echo "ICU error"; exit 1; }
+try_hard $c eim ListServerCertificates --authentication-method=accesskey &> /dev/null || { echo "EIM error"; exit 1; }
+try_hard $c icu ReadQuotas --authentication-method=accesskey &> /dev/null || { echo "ICU error"; exit 1; }
 $c directlink DescribeConnections --authentication-method=accesskey &> /dev/null || { echo "DirectLink error"; exit 1; }
 
 echo "OK"

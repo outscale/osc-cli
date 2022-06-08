@@ -25,32 +25,23 @@ fi
 
 setup_osc_config_file_accesskey
 
-# slow down to avoid bruteforce protection
-sleep 5
 # Listing Access Keys through ICU should succeed with password method
-$c icu ListAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null || { echo "error, cannot list access keys on ICU with password method"; exit 1; }
+try_hard $c icu ListAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null || { echo "error, cannot list access keys on ICU with password method"; exit 1; }
 
-sleep 5
 # Listing Access Keys through Outscale API should succeed with password method
-$c api ReadAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null || { echo "error, cannot list access keys on Outsacale API with password method"; exit 1; }
+try_hard $c api ReadAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null || { echo "error, cannot list access keys on Outsacale API with password method"; exit 1; }
 
-sleep 5
 # Should fail without password
 $c icu ListAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" &> /dev/null && { echo "error, can read access keys without password"; exit 1; }
-sleep 5
 $c api ReadAccessKeys --authentication-method=password --login "$OSC_TEST_LOGIN" &> /dev/null && { echo "error, can read access keys without password"; exit 1; }
 
-sleep 5
 # Should fail without login
 $c icu ListAccessKeys --authentication-method=password --password "$OSC_TEST_PASSWORD" &> /dev/null && { echo "error, can read access keys without login"; exit 1; }
-sleep 5
 $c api ReadAccessKeys --authentication-method=password --password "$OSC_TEST_PASSWORD" &> /dev/null && { echo "error, can read access keys without login"; exit 1; }
 
-sleep 5
 # Listing ICU quota should succeed with access keys
-$c icu ReadQuotas --authentication-method=accesskey &> /dev/null || { echo "error, cannot read quota on ICU with accesskey method"; exit 1; }
+try_hard $c icu ReadQuotas --authentication-method=accesskey &> /dev/null || { echo "error, cannot read quota on ICU with accesskey method"; exit 1; }
 
-sleep 5
 # Listing ICU quota with password method should fail
 $c icu ReadQuotas --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null && { echo "error, can read quota with password method"; exit 1; }
 
