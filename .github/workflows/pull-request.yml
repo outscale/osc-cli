@@ -29,7 +29,11 @@ jobs:
           dist/osc_sdk-*.whl
           dist/osc-sdk-*.tar.gz
           pkg/osc-cli-x86_64.AppImage
-  tests-python-3-6:
+          pkg/osc-cli-x86_64.zip
+  tests-app:
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -37,151 +41,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.6'
-    - name: Install dependencies
-      run: make .venv/ok
-    - name: Analysing the code with pylint
-      run: make test-pylint
-    - name: Security check - Bandit
-      run: make test-bandit
-    - name: Test typing - mypy
-      run: make test-mypy
-    - name: Test pytest
-      run: make test-pytest
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
-        OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
-        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Integration tests
-      run: make test-int
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
-        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Test python package building
-      run: make build
-  tests-python-3-7:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: pre-commit/action@v2.0.3
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.7'
-    - name: Install dependencies
-      run: make .venv/ok
-    - name: Analysing the code with pylint
-      run: make test-pylint
-    - name: Security check - Bandit
-      run: make test-bandit
-    - name: Test typing - mypy
-      run: make test-mypy
-    - name: Test pytest
-      run: make test-pytest
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
-        OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
-        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Integration tests
-      run: make test-int
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
-        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Test python package building
-      run: make build
-  tests-python-3-8:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: pre-commit/action@v2.0.3
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    - name: Install dependencies
-      run: make .venv/ok
-    - name: Analysing the code with pylint
-      run: make test-pylint
-    - name: Security check - Bandit
-      run: make test-bandit
-    - name: Test typing - mypy
-      run: make test-mypy
-    - name: Test pytest
-      run: make test-pytest
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
-        OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
-        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Integration tests
-      run: make test-int
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
-        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Test python package building
-      run: make build
-  tests-python-3-9:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: pre-commit/action@v2.0.3
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: make .venv/ok
-    - name: Analysing the code with pylint
-      run: make test-pylint
-    - name: Security check - Bandit
-      run: make test-bandit
-    - name: Test typing - mypy
-      run: make test-mypy
-    - name: Test pytest
-      run: make test-pytest
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_ENDPOINT_ICU: ${{ secrets.OSC_TEST_ENDPOINT_ICU }}
-        OSC_TEST_ENDPOINT_API: ${{ secrets.OSC_TEST_ENDPOINT_API }}
-        OSC_TEST_ENDPOINT_FCU: ${{ secrets.OSC_TEST_ENDPOINT_FCU }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Integration tests
-      run: make test-int
-      env:
-        OSC_TEST_ACCESS_KEY: ${{ secrets.OSC_TEST_ACCESS_KEY }}
-        OSC_TEST_SECRET_KEY: ${{ secrets.OSC_TEST_SECRET_KEY }}
-        OSC_TEST_LOGIN: ${{ secrets.OSC_TEST_LOGIN }}
-        OSC_TEST_PASSWORD: ${{ secrets.OSC_TEST_PASSWORD }}
-        OSC_TEST_REGION: ${{ secrets.OSC_TEST_REGION }}
-    - name: Test python package building
-      run: make build
-  tests-python-3-10:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: pre-commit/action@v2.0.3
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
+        python-version: ${{ matrix.version }}
     - name: Install dependencies
       run: make .venv/ok
     - name: Analysing the code with pylint
@@ -210,7 +70,7 @@ jobs:
     - name: Test python package building
       run: make build
   dependabot-auto-merge:
-    needs: [tests-packaging, tests-python-3-6, tests-python-3-7, tests-python-3-8, tests-python-3-9, tests-python-3-10]
+    needs: [tests-packaging, tests-app]
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
