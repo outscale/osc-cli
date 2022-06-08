@@ -1,0 +1,56 @@
+function setup_no_configuration_file {
+    rm -rf ~/.osc/config.json
+    rm -rf ~/.osc_sdk/config.json
+}
+
+function setup_osc_config_file_accesskey {
+    setup_no_configuration_file
+
+    if [ -z "$OSC_TEST_ACCESS_KEY" ]; then
+    echo "OSC_TEST_ACCESS_KEY not set, aborting"
+    exit 1
+    fi
+
+    if [ -z "$OSC_TEST_SECRET_KEY" ]; then
+        echo "OSC_TEST_SECRET_KEY not set, aborting"
+        exit 1
+    fi
+
+    if [ -z "$OSC_TEST_REGION" ]; then
+        echo "OSC_TEST_REGION not set, aborting"
+        exit 1
+    fi
+
+    mkdir -p ~/.osc/
+    cat <<EOF > ~/.osc/config.json
+    {
+        "default": {
+            "access_key": "$OSC_TEST_ACCESS_KEY",
+            "secret_key": "$OSC_TEST_SECRET_KEY",
+            "protocol": "https",
+            "method": "POST",
+            "region": "$OSC_TEST_REGION"
+        }
+    }
+EOF
+}
+
+function setup_osc_config_file_no_auth {
+    setup_no_configuration_file
+
+    if [ -z "$OSC_TEST_REGION" ]; then
+        echo "OSC_TEST_REGION not set, aborting"
+        exit 1
+    fi
+
+    mkdir -p ~/.osc/
+    cat <<EOF > ~/.osc/config.json
+    {
+        "default": {
+            "protocol": "https",
+            "method": "POST",
+            "region": "$OSC_TEST_REGION"
+        }
+    }
+EOF
+}

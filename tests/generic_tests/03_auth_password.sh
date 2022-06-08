@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+source common_functions.sh
 
 # Assuming you are running this from a prepared virtual environment
 PROJECT_ROOT=$(cd "$(dirname $0)/../.." && pwd)
@@ -21,6 +22,8 @@ if [ -z "$OSC_TEST_PASSWORD" ]; then
     echo "error, OSC_TEST_PASSWORD must be set"
     exit 1
 fi
+
+setup_osc_config_file_accesskey
 
 # slow down to avoid bruteforce protection
 sleep 5
