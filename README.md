@@ -88,10 +88,7 @@ The CLI requires a configuration file in `~/.osc/config.json` The content must b
 {"default":
     {"access_key": "MYACCESSKEY",
      "secret_key": "MYSECRETKEY",
-     "host": "outscale.com",
-     "https": true,
-     "method": "POST",
-     "region_name": "eu-west-2"
+     "region": "eu-west-2"
     },
   "us":
     {"access_key": "MYACCESSKEY",
@@ -99,7 +96,7 @@ The CLI requires a configuration file in `~/.osc/config.json` The content must b
      "host": "outscale.com",
      "https": true,
      "method": "POST",
-     "region_name": "us-east-2"
+     "region": "us-east-2"
     }
 }
 ```
