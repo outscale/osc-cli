@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# Resolve the calling command (preserving symbolic links).
+export APPIMAGE_COMMAND="$(command -v -- $ARGV0)"
+
+# Export TCl/Tk
+export TCL_LIBRARY="${APPDIR}/usr/share/tcltk/tcl8.5"
+export TK_LIBRARY="${APPDIR}/usr/share/tcltk/tk8.5"
+export TKPATH="${TK_LIBRARY}"
+
+# Export SSL certificate
+export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
+
+# Call Python
+"$APPDIR/opt/python3.9/bin/python3.9" "$@"
