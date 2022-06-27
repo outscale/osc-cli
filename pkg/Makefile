@@ -37,12 +37,6 @@ appimagetool-x86_64.AppImage:
 osc-cli-x86_64.AppImage:  osc-cli.AppDir/done appimagetool-x86_64.AppImage
 	./appimagetool-x86_64.AppImage osc-cli.AppDir/
 
-osc-cli-x86_64.zip: osc-cli
-	zip -r osc-cli-x86_64.zip osc-cli
-
-osc-cli:
-	$(SUDO) docker run --rm -v ${PWD}/..:/src outscale/wine-pyinstaller:0.0.1 --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
-
 osc-api.json:
 	curl -s https://raw.githubusercontent.com/outscale/osc-api/master/outscale.yaml | yq $(YQ_ARG) > osc-api.json
 
@@ -74,7 +68,7 @@ osc-cli-completion.bash: osc-api.json osc-cli-completion.call_list osc-cli-compl
 
 clean:
 	rm -rvf appimagetool-x86_64.AppImage osc-cli-x86_64.AppImage python*AppImage\
-		osc-cli.AppDir osc-cli.zip osc-cli osc-cli-completion.bash\
+		osc-cli.AppDir  osc-cli-completion.bash\
 		osc-cli-completion.call_list \
 		osc-cli-completion.calls osc-api.json config.sh
 
