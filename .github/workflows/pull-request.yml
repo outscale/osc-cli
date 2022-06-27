@@ -21,8 +21,6 @@ jobs:
       run: |
         cd pkg && make osc-cli-x86_64.AppImage
         ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
-    - name: Package for Windows
-      run: cd pkg && make osc-cli-x86_64.zip
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -31,7 +29,6 @@ jobs:
           dist/osc_sdk-*.whl
           dist/osc-sdk-*.tar.gz
           pkg/osc-cli-x86_64.AppImage
-          pkg/osc-cli-x86_64.zip
   tests-python-3-6:
     runs-on: ubuntu-latest
     steps:

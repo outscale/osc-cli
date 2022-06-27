@@ -1,0 +1,51 @@
+name: Package Application with Pyinstaller on Mingw64
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: >-
+          git
+          base-devel
+          zip
+        pacboy:
+          openssl
+          python-pip
+
+    - shell: msys2 {0}
+      run: |
+        git submodule update --init
+        python --version
+        python -m pip install pyinstaller
+        python -m pip install .
+        pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py --add-data /mingw64/bin/libcrypto-1_1-x64.dll:. --add-data /mingw64/bin/libssl-1_1-x64.dll:.
+        zip -r osc-cli-x86_64.zip pkg/osc-cli
+        ./pkg/osc-cli/osc-cli.exe api ReadRegions | grep api.eu-west-2.outscale.com
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      if: ${{ github.event_name != 'push' }}
+      with:
+        name: osc-cli-win
+        path: |
+          osc-cli-x86_64.zip
+    - name: upload nightly
+      uses: "marvinpinto/action-automatic-releases@latest"
+      if: ${{ github.event_name == 'push' }}
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: true
+        automatic_release_tag: "nightly-windows"
+        title: "Windows Development Build"
+        files: |
+          osc-cli-x86_64.zip
