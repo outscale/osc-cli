@@ -4,7 +4,9 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import re
+import sys
 import urllib.parse
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
@@ -70,6 +72,9 @@ NO_AUTH_CALLS: Dict[str, Set[str]] = {
         "ReadPublicIpRanges",
     },
 }
+
+dir_path = os.path.join(os.path.dirname(__file__))
+BASH_COMPLETION_PATH = os.path.abspath("{}/osc-cli-completion.bash".format(dir_path))
 
 
 class Configuration(TypedDict):
@@ -741,8 +746,10 @@ def api_connect(
     login: Optional[str] = None,
     password: Optional[str] = None,
     authentication_method: Optional[str] = None,
+    bash_completion: bool = False,
     **kwargs: CallParameters,
 ):
+
     calls = {
         "api": OSCCall,
         "directlink": DirectLinkCall,
@@ -762,6 +769,18 @@ def api_connect(
 
 
 def main():
+    argc = len(sys.argv)
+    argv = sys.argv
+
+    if argc > 1:
+        for i in range(1, argc):
+            a = argv[i]
+            if a == "--bash_completion":
+                f = open(BASH_COMPLETION_PATH, "r")
+                print(f.read())
+                sys.exit()
+                return 0
+
     logging.basicConfig(level=logging.ERROR)
     fire.Fire(api_connect)
 

@@ -58,8 +58,8 @@ pypi-upload: .venv/ok
 pkg/osc-cli-completion.bash:
 	make -C pkg/ osc-cli-completion.bash
 
-osc-cli-completion.bash: pkg/osc-cli-completion.bash
-	cp pkg/osc-cli-completion.bash .
+osc_sdk/osc-cli-completion.bash: pkg/osc-cli-completion.bash
+	cp pkg/osc-cli-completion.bash osc_sdk/
 
 .venv/ok:
 	@./tests/setup_venv.sh
