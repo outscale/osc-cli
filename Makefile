@@ -55,6 +55,12 @@ build: .venv/ok
 pypi-upload: .venv/ok
 	. .venv/bin/activate && twine upload dist/*
 
+pkg/osc-cli-completion.bash:
+	make -C pkg/ osc-cli-completion.bash
+
+osc-cli-completion.bash: pkg/osc-cli-completion.bash
+	cp pkg/osc-cli-completion.bash .
+
 .venv/ok:
 	@./tests/setup_venv.sh
 
