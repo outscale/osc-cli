@@ -581,7 +581,10 @@ class IcuCall(JsonApiCall):
             raise RuntimeError("Parameters lists are not supported")
 
         # Specific to ICU
-        if self.authentication_method == "accesskey":
+        if (
+            self.authentication_method == "accesskey"
+            or self.authentication_method == None
+        ):
             data.update({"AuthenticationMethod": "accesskey"})
 
         filters = self.get_filters(data)
