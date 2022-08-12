@@ -1,0 +1,462 @@
+AcceptVpcPeeringConnection () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcPeeringConnectionId " -- ${cur}))
+}
+AllocateAddress () 	{
+    COMPREPLY=($(compgen -W " --Domain --DryRun " -- ${cur}))
+}
+AssignPrivateIpAddresses () 	{
+    COMPREPLY=($(compgen -W " --AllowReassignment --NetworkInterfaceId --PrivateIpAddresses --SecondaryPrivateIpAddressCount " -- ${cur}))
+}
+AssociateAddress () 	{
+    COMPREPLY=($(compgen -W " --AllocationId --AllowReassociation --DryRun --InstanceId --NetworkInterfaceId --PrivateIpAddress --PublicIp " -- ${cur}))
+}
+AssociateDhcpOptions () 	{
+    COMPREPLY=($(compgen -W " --DhcpOptionsId --DryRun --VpcId " -- ${cur}))
+}
+AssociateRouteTable () 	{
+    COMPREPLY=($(compgen -W " --DryRun --RouteTableId --SubnetId " -- ${cur}))
+}
+AttachInternetGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InternetGatewayId --VpcId " -- ${cur}))
+}
+AttachNetworkInterface () 	{
+    COMPREPLY=($(compgen -W " --DeviceIndex --DryRun --InstanceId --NetworkInterfaceId " -- ${cur}))
+}
+AttachVolume () 	{
+    COMPREPLY=($(compgen -W " --Device --DryRun --InstanceId --VolumeId " -- ${cur}))
+}
+AttachVpnGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcId --VpnGatewayId " -- ${cur}))
+}
+AuthorizeSecurityGroupEgress () 	{
+    COMPREPLY=($(compgen -W " --CidrIp --DryRun --FromPort --GroupId --IpPermissions --IpProtocol --SourceSecurityGroupName --SourceSecurityGroupOwnerId --ToPort " -- ${cur}))
+}
+AuthorizeSecurityGroupIngress () 	{
+    COMPREPLY=($(compgen -W " --CidrIp --DryRun --FromPort --GroupId --GroupName --IpPermissions --IpProtocol --SourceSecurityGroupName --SourceSecurityGroupOwnerId --ToPort " -- ${cur}))
+}
+BundleInstance () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceId --Storage " -- ${cur}))
+}
+CancelBundleTask () 	{
+    COMPREPLY=($(compgen -W " --BundleId --DryRun " -- ${cur}))
+}
+CancelConversionTask () 	{
+    COMPREPLY=($(compgen -W " --ConversionTaskId --DryRun --ReasonMessage " -- ${cur}))
+}
+CancelExportTask () 	{
+    COMPREPLY=($(compgen -W " --ExportTaskId " -- ${cur}))
+}
+CancelReservedInstancesListing () 	{
+    COMPREPLY=($(compgen -W " --ReservedInstancesListingId " -- ${cur}))
+}
+CancelSpotInstanceRequests () 	{
+    COMPREPLY=($(compgen -W " --DryRun --SpotInstanceRequestIds " -- ${cur}))
+}
+ConfirmProductInstance () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceId --ProductCode " -- ${cur}))
+}
+CopyImage () 	{
+    COMPREPLY=($(compgen -W " --ClientToken --Description --DryRun --Name --SourceImageId --SourceRegion " -- ${cur}))
+}
+CopySnapshot () 	{
+    COMPREPLY=($(compgen -W " --Description --DestinationRegion --DryRun --PresignedUrl --SourceRegion --SourceSnapshotId " -- ${cur}))
+}
+CreateCustomerGateway () 	{
+    COMPREPLY=($(compgen -W " --BgpAsn --DryRun --PublicIp --Type " -- ${cur}))
+}
+CreateDhcpOptions () 	{
+    COMPREPLY=($(compgen -W " --DhcpConfigurations --DryRun " -- ${cur}))
+}
+CreateImage () 	{
+    COMPREPLY=($(compgen -W " --BlockDeviceMappings --Description --DryRun --InstanceId --Name --NoReboot " -- ${cur}))
+}
+CreateInstanceExportTask () 	{
+    COMPREPLY=($(compgen -W " --Description --ExportToS3Task --InstanceId --TargetEnvironment " -- ${cur}))
+}
+CreateInternetGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun " -- ${cur}))
+}
+CreateKeyPair () 	{
+    COMPREPLY=($(compgen -W " --DryRun --KeyName " -- ${cur}))
+}
+CreateNetworkAcl () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcId " -- ${cur}))
+}
+CreateNetworkAclEntry () 	{
+    COMPREPLY=($(compgen -W " --CidrBlock --DryRun --Egress --IcmpTypeCode --NetworkAclId --PortRange --Protocol --RuleAction --RuleNumber " -- ${cur}))
+}
+CreateNetworkInterface () 	{
+    COMPREPLY=($(compgen -W " --Description --DryRun --Groups --PrivateIpAddress --PrivateIpAddresses --SecondaryPrivateIpAddressCount --SubnetId " -- ${cur}))
+}
+CreatePlacementGroup () 	{
+    COMPREPLY=($(compgen -W " --DryRun --GroupName --Strategy " -- ${cur}))
+}
+CreateReservedInstancesListing () 	{
+    COMPREPLY=($(compgen -W " --ClientToken --InstanceCount --PriceSchedules --ReservedInstancesId " -- ${cur}))
+}
+CreateRoute () 	{
+    COMPREPLY=($(compgen -W " --DestinationCidrBlock --DryRun --GatewayId --InstanceId --NetworkInterfaceId --RouteTableId --VpcPeeringConnectionId " -- ${cur}))
+}
+CreateRouteTable () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcId " -- ${cur}))
+}
+CreateSecurityGroup () 	{
+    COMPREPLY=($(compgen -W " --Description --DryRun --GroupName --VpcId " -- ${cur}))
+}
+CreateSnapshot () 	{
+    COMPREPLY=($(compgen -W " --Description --DryRun --VolumeId " -- ${cur}))
+}
+CreateSpotDatafeedSubscription () 	{
+    COMPREPLY=($(compgen -W " --Bucket --DryRun --Prefix " -- ${cur}))
+}
+CreateSubnet () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --CidrBlock --DryRun --VpcId " -- ${cur}))
+}
+CreateTags () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Resources --Tags " -- ${cur}))
+}
+CreateVolume () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --DryRun --Encrypted --Iops --Size --SnapshotId --VolumeType " -- ${cur}))
+}
+CreateVpc () 	{
+    COMPREPLY=($(compgen -W " --CidrBlock --DryRun --InstanceTenancy " -- ${cur}))
+}
+CreateVpcPeeringConnection () 	{
+    COMPREPLY=($(compgen -W " --DryRun --PeerOwnerId --PeerVpcId --VpcId " -- ${cur}))
+}
+CreateVpnConnection () 	{
+    COMPREPLY=($(compgen -W " --CustomerGatewayId --DryRun --Options --Type --VpnGatewayId " -- ${cur}))
+}
+CreateVpnConnectionRoute () 	{
+    COMPREPLY=($(compgen -W " --DestinationCidrBlock --VpnConnectionId " -- ${cur}))
+}
+CreateVpnGateway () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --DryRun --Type " -- ${cur}))
+}
+DeleteCustomerGateway () 	{
+    COMPREPLY=($(compgen -W " --CustomerGatewayId --DryRun " -- ${cur}))
+}
+DeleteDhcpOptions () 	{
+    COMPREPLY=($(compgen -W " --DhcpOptionsId --DryRun " -- ${cur}))
+}
+DeleteInternetGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InternetGatewayId " -- ${cur}))
+}
+DeleteKeyPair () 	{
+    COMPREPLY=($(compgen -W " --DryRun --KeyName " -- ${cur}))
+}
+DeleteNetworkAcl () 	{
+    COMPREPLY=($(compgen -W " --DryRun --NetworkAclId " -- ${cur}))
+}
+DeleteNetworkAclEntry () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Egress --NetworkAclId --RuleNumber " -- ${cur}))
+}
+DeleteNetworkInterface () 	{
+    COMPREPLY=($(compgen -W " --DryRun --NetworkInterfaceId " -- ${cur}))
+}
+DeletePlacementGroup () 	{
+    COMPREPLY=($(compgen -W " --DryRun --GroupName " -- ${cur}))
+}
+DeleteRoute () 	{
+    COMPREPLY=($(compgen -W " --DestinationCidrBlock --DryRun --RouteTableId " -- ${cur}))
+}
+DeleteRouteTable () 	{
+    COMPREPLY=($(compgen -W " --DryRun --RouteTableId " -- ${cur}))
+}
+DeleteSecurityGroup () 	{
+    COMPREPLY=($(compgen -W " --DryRun --GroupId --GroupName " -- ${cur}))
+}
+DeleteSnapshot () 	{
+    COMPREPLY=($(compgen -W " --DryRun --SnapshotId " -- ${cur}))
+}
+DeleteSpotDatafeedSubscription () 	{
+    COMPREPLY=($(compgen -W " --DryRun " -- ${cur}))
+}
+DeleteSubnet () 	{
+    COMPREPLY=($(compgen -W " --DryRun --SubnetId " -- ${cur}))
+}
+DeleteTags () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Resources --Tags " -- ${cur}))
+}
+DeleteVolume () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VolumeId " -- ${cur}))
+}
+DeleteVpc () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcId " -- ${cur}))
+}
+DeleteVpcPeeringConnection () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcPeeringConnectionId " -- ${cur}))
+}
+DeleteVpnConnection () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpnConnectionId " -- ${cur}))
+}
+DeleteVpnConnectionRoute () 	{
+    COMPREPLY=($(compgen -W " --DestinationCidrBlock --VpnConnectionId " -- ${cur}))
+}
+DeleteVpnGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpnGatewayId " -- ${cur}))
+}
+DeregisterImage () 	{
+    COMPREPLY=($(compgen -W " --DryRun --ImageId " -- ${cur}))
+}
+DescribeAccountAttributes () 	{
+    COMPREPLY=($(compgen -W " --AttributeNames --DryRun " -- ${cur}))
+}
+DescribeAddresses () 	{
+    COMPREPLY=($(compgen -W " --AllocationIds --DryRun --Filters --PublicIps " -- ${cur}))
+}
+DescribeAvailabilityZones () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --ZoneNames " -- ${cur}))
+}
+DescribeBundleTasks () 	{
+    COMPREPLY=($(compgen -W " --BundleIds --DryRun --Filters " -- ${cur}))
+}
+DescribeConversionTasks () 	{
+    COMPREPLY=($(compgen -W " --ConversionTaskIds --DryRun --Filters " -- ${cur}))
+}
+DescribeCustomerGateways () 	{
+    COMPREPLY=($(compgen -W " --CustomerGatewayIds --DryRun --Filters " -- ${cur}))
+}
+DescribeDhcpOptions () 	{
+    COMPREPLY=($(compgen -W " --DhcpOptionsIds --DryRun --Filters " -- ${cur}))
+}
+DescribeExportTasks () 	{
+    COMPREPLY=($(compgen -W " --ExportTaskIds " -- ${cur}))
+}
+DescribeImageAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --ImageId " -- ${cur}))
+}
+DescribeImages () 	{
+    COMPREPLY=($(compgen -W " --DryRun --ExecutableUsers --Filters --ImageIds --Owners " -- ${cur}))
+}
+DescribeInstanceAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --InstanceId " -- ${cur}))
+}
+DescribeInstanceStatus () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --IncludeAllInstances --InstanceIds --MaxResults --NextToken " -- ${cur}))
+}
+DescribeInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --InstanceIds --MaxResults --NextToken " -- ${cur}))
+}
+DescribeInternetGateways () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --InternetGatewayIds " -- ${cur}))
+}
+DescribeKeyPairs () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --KeyNames " -- ${cur}))
+}
+DescribeNetworkAcls () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --NetworkAclIds " -- ${cur}))
+}
+DescribeNetworkInterfaceAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --NetworkInterfaceId " -- ${cur}))
+}
+DescribeNetworkInterfaces () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --NetworkInterfaceIds " -- ${cur}))
+}
+DescribePlacementGroups () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --GroupNames " -- ${cur}))
+}
+DescribeRegions () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --RegionNames " -- ${cur}))
+}
+DescribeReservedInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --OfferingType --ReservedInstancesIds " -- ${cur}))
+}
+DescribeReservedInstancesListings () 	{
+    COMPREPLY=($(compgen -W " --Filters --ReservedInstancesId --ReservedInstancesListingId " -- ${cur}))
+}
+DescribeReservedInstancesModifications () 	{
+    COMPREPLY=($(compgen -W " --Filters --NextToken --ReservedInstancesModificationIds " -- ${cur}))
+}
+DescribeReservedInstancesOfferings () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --DryRun --Filters --IncludeMarketplace --InstanceTenancy --InstanceType --MaxDuration --MaxInstanceCount --MaxResults --MinDuration --NextToken --OfferingType --ProductDescription --ReservedInstancesOfferingIds " -- ${cur}))
+}
+DescribeRouteTables () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --RouteTableIds " -- ${cur}))
+}
+DescribeSecurityGroups () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --GroupIds --GroupNames " -- ${cur}))
+}
+DescribeSnapshotAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --SnapshotId " -- ${cur}))
+}
+DescribeSnapshots () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --OwnerIds --RestorableByUserIds --SnapshotIds " -- ${cur}))
+}
+DescribeSpotDatafeedSubscription () 	{
+    COMPREPLY=($(compgen -W " --DryRun " -- ${cur}))
+}
+DescribeSpotInstanceRequests () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --SpotInstanceRequestIds " -- ${cur}))
+}
+DescribeSpotPriceHistory () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --DryRun --EndTime --Filters --InstanceTypes --MaxResults --NextToken --ProductDescriptions --StartTime " -- ${cur}))
+}
+DescribeSubnets () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --SubnetIds " -- ${cur}))
+}
+DescribeTags () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --MaxResults --NextToken " -- ${cur}))
+}
+DescribeVolumeAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --VolumeId " -- ${cur}))
+}
+DescribeVolumeStatus () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --MaxResults --NextToken --VolumeIds " -- ${cur}))
+}
+DescribeVolumes () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --VolumeIds " -- ${cur}))
+}
+DescribeVpcAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --VpcId " -- ${cur}))
+}
+DescribeVpcPeeringConnections () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --VpcPeeringConnectionIds " -- ${cur}))
+}
+DescribeVpcs () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --VpcIds " -- ${cur}))
+}
+DescribeVpnConnections () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --VpnConnectionIds " -- ${cur}))
+}
+DescribeVpnGateways () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Filters --VpnGatewayIds " -- ${cur}))
+}
+DetachInternetGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InternetGatewayId --VpcId " -- ${cur}))
+}
+DetachNetworkInterface () 	{
+    COMPREPLY=($(compgen -W " --AttachmentId --DryRun --Force " -- ${cur}))
+}
+DetachVolume () 	{
+    COMPREPLY=($(compgen -W " --Device --DryRun --Force --InstanceId --VolumeId " -- ${cur}))
+}
+DetachVpnGateway () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcId --VpnGatewayId " -- ${cur}))
+}
+DisableVgwRoutePropagation () 	{
+    COMPREPLY=($(compgen -W " --GatewayId --RouteTableId " -- ${cur}))
+}
+DisassociateAddress () 	{
+    COMPREPLY=($(compgen -W " --AssociationId --DryRun --PublicIp " -- ${cur}))
+}
+DisassociateRouteTable () 	{
+    COMPREPLY=($(compgen -W " --AssociationId --DryRun " -- ${cur}))
+}
+EnableVgwRoutePropagation () 	{
+    COMPREPLY=($(compgen -W " --GatewayId --RouteTableId " -- ${cur}))
+}
+EnableVolumeIO () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VolumeId " -- ${cur}))
+}
+GetConsoleOutput () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceId " -- ${cur}))
+}
+GetPasswordData () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceId " -- ${cur}))
+}
+ImportInstance () 	{
+    COMPREPLY=($(compgen -W " --Description --DiskImages --DryRun --LaunchSpecification --Platform " -- ${cur}))
+}
+ImportKeyPair () 	{
+    COMPREPLY=($(compgen -W " --DryRun --KeyName --PublicKeyMaterial " -- ${cur}))
+}
+ImportVolume () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZone --Description --DryRun --Image --Volume " -- ${cur}))
+}
+ModifyImageAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --Description --DryRun --ImageId --LaunchPermission --OperationType --ProductCodes --UserGroups --UserIds --Value " -- ${cur}))
+}
+ModifyInstanceAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --BlockDeviceMappings --DisableApiTermination --DryRun --EbsOptimized --Groups --InstanceId --InstanceInitiatedShutdownBehavior --InstanceType --Kernel --Ramdisk --SourceDestCheck --SriovNetSupport --UserData --Value " -- ${cur}))
+}
+ModifyNetworkInterfaceAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attachment --Description --DryRun --Groups --NetworkInterfaceId --SourceDestCheck " -- ${cur}))
+}
+ModifyReservedInstances () 	{
+    COMPREPLY=($(compgen -W " --ClientToken --ReservedInstancesIds --TargetConfigurations " -- ${cur}))
+}
+ModifySnapshotAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --CreateVolumePermission --DryRun --GroupNames --OperationType --SnapshotId --UserIds " -- ${cur}))
+}
+ModifySubnetAttribute () 	{
+    COMPREPLY=($(compgen -W " --MapPublicIpOnLaunch --SubnetId " -- ${cur}))
+}
+ModifyVolumeAttribute () 	{
+    COMPREPLY=($(compgen -W " --AutoEnableIO --DryRun --VolumeId " -- ${cur}))
+}
+ModifyVpcAttribute () 	{
+    COMPREPLY=($(compgen -W " --EnableDnsHostnames --EnableDnsSupport --VpcId " -- ${cur}))
+}
+MonitorInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceIds " -- ${cur}))
+}
+PurchaseReservedInstancesOffering () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceCount --LimitPrice --ReservedInstancesOfferingId " -- ${cur}))
+}
+RebootInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceIds " -- ${cur}))
+}
+RegisterImage () 	{
+    COMPREPLY=($(compgen -W " --Architecture --BlockDeviceMappings --Description --DryRun --ImageLocation --KernelId --Name --RamdiskId --RootDeviceName --SriovNetSupport --VirtualizationType " -- ${cur}))
+}
+RejectVpcPeeringConnection () 	{
+    COMPREPLY=($(compgen -W " --DryRun --VpcPeeringConnectionId " -- ${cur}))
+}
+ReleaseAddress () 	{
+    COMPREPLY=($(compgen -W " --AllocationId --DryRun --PublicIp " -- ${cur}))
+}
+ReplaceNetworkAclAssociation () 	{
+    COMPREPLY=($(compgen -W " --AssociationId --DryRun --NetworkAclId " -- ${cur}))
+}
+ReplaceNetworkAclEntry () 	{
+    COMPREPLY=($(compgen -W " --CidrBlock --DryRun --Egress --IcmpTypeCode --NetworkAclId --PortRange --Protocol --RuleAction --RuleNumber " -- ${cur}))
+}
+ReplaceRoute () 	{
+    COMPREPLY=($(compgen -W " --DestinationCidrBlock --DryRun --GatewayId --InstanceId --NetworkInterfaceId --RouteTableId --VpcPeeringConnectionId " -- ${cur}))
+}
+ReplaceRouteTableAssociation () 	{
+    COMPREPLY=($(compgen -W " --AssociationId --DryRun --RouteTableId " -- ${cur}))
+}
+ReportInstanceStatus () 	{
+    COMPREPLY=($(compgen -W " --Description --DryRun --EndTime --Instances --ReasonCodes --StartTime --Status " -- ${cur}))
+}
+RequestSpotInstances () 	{
+    COMPREPLY=($(compgen -W " --AvailabilityZoneGroup --DryRun --InstanceCount --LaunchGroup --LaunchSpecification --SpotPrice --Type --ValidFrom --ValidUntil " -- ${cur}))
+}
+ResetImageAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --ImageId " -- ${cur}))
+}
+ResetInstanceAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --InstanceId " -- ${cur}))
+}
+ResetNetworkInterfaceAttribute () 	{
+    COMPREPLY=($(compgen -W " --DryRun --NetworkInterfaceId --SourceDestCheck " -- ${cur}))
+}
+ResetSnapshotAttribute () 	{
+    COMPREPLY=($(compgen -W " --Attribute --DryRun --SnapshotId " -- ${cur}))
+}
+RevokeSecurityGroupEgress () 	{
+    COMPREPLY=($(compgen -W " --CidrIp --DryRun --FromPort --GroupId --IpPermissions --IpProtocol --SourceSecurityGroupName --SourceSecurityGroupOwnerId --ToPort " -- ${cur}))
+}
+RevokeSecurityGroupIngress () 	{
+    COMPREPLY=($(compgen -W " --CidrIp --DryRun --FromPort --GroupId --GroupName --IpPermissions --IpProtocol --SourceSecurityGroupName --SourceSecurityGroupOwnerId --ToPort " -- ${cur}))
+}
+RunInstances () 	{
+    COMPREPLY=($(compgen -W " --AdditionalInfo --BlockDeviceMappings --ClientToken --DisableApiTermination --DryRun --EbsOptimized --IamInstanceProfile --ImageId --InstanceInitiatedShutdownBehavior --InstanceType --KernelId --KeyName --MaxCount --MinCount --Monitoring --NetworkInterfaces --Placement --PrivateIpAddress --RamdiskId --SecurityGroupIds --SecurityGroups --SubnetId --UserData " -- ${cur}))
+}
+StartInstances () 	{
+    COMPREPLY=($(compgen -W " --AdditionalInfo --DryRun --InstanceIds " -- ${cur}))
+}
+StopInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --Force --InstanceIds " -- ${cur}))
+}
+TerminateInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceIds " -- ${cur}))
+}
+UnassignPrivateIpAddresses () 	{
+    COMPREPLY=($(compgen -W " --NetworkInterfaceId --PrivateIpAddresses " -- ${cur}))
+}
+UnmonitorInstances () 	{
+    COMPREPLY=($(compgen -W " --DryRun --InstanceIds " -- ${cur}))
+}
