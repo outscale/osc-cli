@@ -23,7 +23,7 @@ osc-cli is pre-packaged for Linux as a standalone [AppImage](https://appimage.or
 
 Optionally, you can install it for all users: `sudo mv osc-cli-x86_64.AppImage /usr/local/bin/osc-cli` and just run `osc-cli`.
 
-you can also install `osc-cli-git` on Archu Linux using AUR: (`yay -S osc-cli-git`)
+you can also install `osc-cli-git` on Arch Linux using AUR: (`yay -S osc-cli-git`)
 
 #### Note:
 
