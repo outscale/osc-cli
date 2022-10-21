@@ -120,6 +120,24 @@ Optional parameters can be applied to each profile :
 }
 ```
 
+## Activate bash-completion
+
+### Activate the completion for the current bash session
+
+```
+source <(osc-cli --bash_completion)
+```
+
+### Generate the file to add it in your bach rc:
+```
+osc-cli --bash_completion > ~/.osc/cli-completion.bash
+```
+then in your bashrc add:
+
+```
+source ~/.osc/cli-completion.bash
+```
+
 ## Usage
 
 ```
