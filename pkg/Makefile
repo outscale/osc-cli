@@ -1,6 +1,6 @@
 include config.mk
 
-all: osc-cli-x86_64.AppImage osc-cli-x86_64.zip osc-cli-completion.bash
+all: osc-cli-x86_64.AppImage osc-cli-completion.bash
 
 config.mk:
 	$(if $(wildcard $@),,@echo "auto run ./configure. to create default conf" && sleep 2 && ./configure)

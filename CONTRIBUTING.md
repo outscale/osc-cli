@@ -47,7 +47,7 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 - Update `setup.py` to update `version`
 - Run all tests with `make test`
 - Build with `make build`. Make sure you have`dist/osc_sdk-1.x-py2.py3-none-any.whl` and `dist/osc-sdk-1.x.tar.gz`.
-- Package with `make package`. Make sure you have `pkg/osc-cli-x86_64.zip` and `pkg/osc-cli-x86_64.AppImage` (you will need either docker or packman).
+- Package with `make package`. Make sure you have `pkg/osc-cli-x86_64.AppImage` (you will need either docker or packman).
 - Commit release update: `git commit -asm "osc-cli v1.x.x"`
 - Push release to new branch `git push origin v1.x.x`
 - Create PR to run github actions and get validation
@@ -58,7 +58,6 @@ merged - if you have ten small, unrelated changes, then go ahead and submit ten 
 - Upload artifacts in release page:
   - `dist/osc_sdk-1.x-py2.py3-none-any.whl`
   - `dist/osc-sdk-1.x.tar.gz`
-  - `pkg/osc-cli-x86_64.zip`
   - `pkg/osc-cli-x86_64.AppImage`
 - Check that auto-build workflow has published package to pip. If not, manually upload files.
 - Check that homebrew has auto-updated with `brew install osc-cli` or check [commit history](https://github.com/Homebrew/homebrew-core/commits/master/Formula/osc-cli.rb), note brew's bot can take time. If not:
