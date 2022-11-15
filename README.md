@@ -52,12 +52,7 @@ this operation is a **lot** slower than using fuse, and the fuse solution should
 
 ### Installing on Windows
 
-osc-cli is pre-packaged for windows:
-- Download `osc-cli-x86_64.zip` from latest version in [releases](https://github.com/outscale/osc-cli/releases).
-- Extract zip archive and run `osc-cli.exe`
-
-Note that some antivirus may consider some files as a virus. Those are false positive.
-If you are worried about it, consider installing osc-cli from Python Package (see below).
+[Check dedicated documentation](windows-setup.md) regarding windows installation.
 
 ### Installing from Python package
 
