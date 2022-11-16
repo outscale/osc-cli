@@ -117,6 +117,13 @@ Optional parameters can be applied to each profile :
 }
 ```
 
+## Get osc-cli version
+
+`--version` option will print osc-cli version and exit.
+```
+osc-cli --version
+```
+
 ## Activate bash-completion
 
 ### Activate the completion for the current bash session
