@@ -780,6 +780,9 @@ def main():
                 print(f.read())
                 sys.exit()
                 return 0
+            elif a == "--version":
+                print(SDK_VERSION)
+                return 0
 
     logging.basicConfig(level=logging.ERROR)
     fire.Fire(api_connect)
