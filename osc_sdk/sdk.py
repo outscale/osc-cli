@@ -35,7 +35,7 @@ DEFAULT_VERSION = datetime.date.today().strftime("%Y-%m-%d")
 DEFAULT_HOST = "outscale.com"
 
 METHODS_SUPPORTED = {"GET", "POST"}
-SDK_VERSION = "1.9.0"
+SDK_VERSION = "1.10.0"
 SSL_VERIFY = True
 SUCCESS_CODES = {200, 201, 202, 203, 204}
 USER_AGENT = "osc_sdk " + SDK_VERSION
