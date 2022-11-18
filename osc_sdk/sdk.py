@@ -46,6 +46,9 @@ logger = logging.getLogger("osc_sdk")
 CallParameters = Dict[str, Any]
 EncodedCallParameters = Optional[str]
 Headers = Tuple[str, str, Dict[str, str]]
+# This is a workaround avoiding Fire to parse password option as python
+# See #238
+PASSWORD_ARG = None
 
 NO_AUTH_CALLS: Dict[str, Set[str]] = {
     "api": {
@@ -761,7 +764,7 @@ def api_connect(
     }
 
     handler = calls[service](
-        profile, login, password, authentication_method, **get_conf(profile)
+        profile, login, PASSWORD_ARG, authentication_method, **get_conf(profile)
     )
     handler.make_request(call, **kwargs)
     if handler.response:
@@ -775,7 +778,10 @@ def main():
     if argc > 1:
         for i in range(1, argc):
             a = argv[i]
-            if a == "--bash_completion":
+            if a == "--password" and i + 1 < argc:
+                global PASSWORD_ARG
+                PASSWORD_ARG = argv[i + 1]
+            elif a == "--bash_completion":
                 f = open(BASH_COMPLETION_PATH, "r")
                 print(f.read())
                 sys.exit()
