@@ -209,8 +209,8 @@ class ApiCall:
     date: Optional[str] = field(default=None, init=False)
     datestamp: Optional[str] = field(default=None, init=False)
 
+    endpoint: Optional[str] = None
     method: str = DEFAULT_METHOD
-    endpoint: str = ""
     host: str = ""
     access_key: Optional[str] = None
     secret_key: Optional[str] = None
@@ -242,7 +242,7 @@ class ApiCall:
         if parsed_url.scheme:
             self.host = parsed_url.netloc
         else:
-            self.host = self.endpoint
+            self.host = str(self.endpoint)
             self.endpoint = f"{self.protocol}://{self.endpoint}"
 
     def check_authentication_options(self):
@@ -269,7 +269,7 @@ class ApiCall:
     def get_url(
         self, call: str, encoded_request_params: EncodedCallParameters = None
     ) -> str:
-        value = self.endpoint
+        value = self.endpoint if self.endpoint else ""
         if self.method == "GET":
             value += f"?{encoded_request_params}"
         return value
@@ -674,7 +674,7 @@ class OSCCall(JsonApiCall):
     def get_url(
         self, call: str, encoded_request_params: EncodedCallParameters = None
     ) -> str:
-        return "/".join([self.endpoint, self.get_canonical_uri(call)])
+        return "/".join([str(self.endpoint), self.get_canonical_uri(call)])
 
     def get_password_params(self) -> PasswordParams:
         # Don't put any auth parameters in body
@@ -706,6 +706,12 @@ class OSCCall(JsonApiCall):
 
         headers.update(self.build_basic_auth())
         return signed_headers, canonical_headers, headers
+
+
+def patch_conf(conf: Configuration, endpoint: Optional[str] = None) -> Configuration:
+    if endpoint:
+        conf["endpoint"] = endpoint
+    return conf
 
 
 def get_conf(profile: str) -> Configuration:
@@ -747,6 +753,7 @@ def api_connect(
     call: str,
     profile: str = DEFAULT_PROFILE,
     login: Optional[str] = None,
+    endpoint: Optional[str] = None,
     password: Optional[str] = None,
     authentication_method: Optional[str] = None,
     bash_completion: bool = False,
@@ -764,8 +771,13 @@ def api_connect(
     }
 
     handler = calls[service](
-        profile, login, PASSWORD_ARG, authentication_method, **get_conf(profile)
+        profile,
+        login,
+        PASSWORD_ARG,
+        authentication_method,
+        **patch_conf(get_conf(profile), endpoint),
     )
+
     handler.make_request(call, **kwargs)
     if handler.response:
         print(json.dumps(handler.response, indent=4))
