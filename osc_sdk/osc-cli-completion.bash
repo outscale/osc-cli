@@ -11,7 +11,7 @@ UpdateVolume()
 }
 UpdateVm()
 {
-    COMPREPLY=($(compgen -W " --BlockDeviceMappings --BsuOptimized --DeletionProtection --DryRun --IsSourceDestChecked --KeypairName --Performance --SecurityGroupIds --UserData --VmId --VmInitiatedShutdownBehavior --VmType" -- ${cur}))
+    COMPREPLY=($(compgen -W " --BlockDeviceMappings --BsuOptimized --DeletionProtection --DryRun --IsSourceDestChecked --KeypairName --NestedVirtualization --Performance --SecurityGroupIds --UserData --VmId --VmInitiatedShutdownBehavior --VmType" -- ${cur}))
 }
 UpdateSubnet()
 {
@@ -47,7 +47,7 @@ UpdateNet()
 }
 UpdateLoadBalancer()
 {
-    COMPREPLY=($(compgen -W " --AccessLog --DryRun --HealthCheck --LoadBalancerName --LoadBalancerPort --PolicyNames --PublicIp --SecurityGroups --ServerCertificateId" -- ${cur}))
+    COMPREPLY=($(compgen -W " --AccessLog --DryRun --HealthCheck --LoadBalancerName --LoadBalancerPort --PolicyNames --PublicIp --SecuredCookies --SecurityGroups --ServerCertificateId" -- ${cur}))
 }
 UpdateListenerRule()
 {
@@ -555,7 +555,7 @@ CreateVolume()
 }
 CreateVms()
 {
-    COMPREPLY=($(compgen -W " --BlockDeviceMappings --BootOnCreation --BsuOptimized --ClientToken --DeletionProtection --DryRun --ImageId --KeypairName --MaxVmsCount --MinVmsCount --Nics --Performance --Placement --PrivateIps --SecurityGroupIds --SecurityGroups --SubnetId --UserData --VmInitiatedShutdownBehavior --VmType" -- ${cur}))
+    COMPREPLY=($(compgen -W " --BlockDeviceMappings --BootOnCreation --BsuOptimized --ClientToken --DeletionProtection --DryRun --ImageId --KeypairName --MaxVmsCount --MinVmsCount --NestedVirtualization --Nics --Performance --Placement --PrivateIps --SecurityGroupIds --SecurityGroups --SubnetId --UserData --VmInitiatedShutdownBehavior --VmType" -- ${cur}))
 }
 CreateVirtualGateway()
 {
