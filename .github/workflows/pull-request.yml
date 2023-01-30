@@ -11,10 +11,14 @@ permissions:
 
 jobs:
   tests-packaging:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
-    - uses: pre-commit/action@v2.0.3
+    - uses: pre-commit/action@v3.0.0
+    - name: setup fuse
+      run: |
+        sudo apt-get update --fix-missing
+        sudo apt-get install -y -f -o Acquire::Retries=3 libfuse2
     - name: Package bdist
       run: make build
     - name: Package AppImage
