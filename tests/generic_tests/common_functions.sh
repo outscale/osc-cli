@@ -60,14 +60,21 @@ function try_hard {
     local result
     cmd=$@
     result="unknown"
+    cnt=0
     while true; do
         set +e
         $cmd
         result=$?
         set -e
+	if [[ $cnt > 99 ]]; then
+	    echo "'$@' fail after $cnt retry"
+	    exit 1
+	fi
+
         if [[ "$result" == "0" ]]; then
             break
         fi
         sleep $(( $RANDOM % 10 + 1 ))
+	cnt=$((cnt + 1))
     done
 }
