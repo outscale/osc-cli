@@ -29,7 +29,7 @@ jobs:
         python --version
         python -m pip install pyinstaller
         python -m pip install .
-        pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py --add-data /mingw64/bin/libcrypto-1_1-x64.dll:. --add-data /mingw64/bin/libssl-1_1-x64.dll:.
+        pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py --add-data /mingw64/bin/libcrypto-3-x64.dll:. --add-data /mingw64/bin/libssl-3-x64.dll:.
         zip -r osc-cli-x86_64.zip pkg/osc-cli
         ./pkg/osc-cli/osc-cli.exe api ReadRegions | grep api.eu-west-2.outscale.com
     - name: Upload artifacts
