@@ -8,9 +8,6 @@ Official Outscale CLI providing connectors to Outscale API.
 
 ## Getting Started
 
-### Prerequisites
-
-You will need [Python 3.6+](https://www.python.org/) or later. Earlier versions including Python 2 are not supported.
 
 ### Installing on Macos
 
@@ -57,6 +54,12 @@ this operation is a **lot** slower than using fuse, and the fuse solution should
 [Check dedicated documentation](windows-setup.md) regarding windows installation.
 
 ### Installing from Python package
+
+#### Prerequisites
+
+You will need [Python 3.6+](https://www.python.org/) or later. Earlier versions including Python 2 are not supported.
+
+#### Pip
 
 You can get the package from [pypi](https://pypi.org/project/osc-sdk/):
 ```
