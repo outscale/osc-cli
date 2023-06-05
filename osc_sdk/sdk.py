@@ -802,6 +802,8 @@ def main():
                 print(SDK_VERSION)
                 return 0
 
+    global USER_AGENT
+    USER_AGENT = "osc-cli/" + SDK_VERSION + " " + USER_AGENT
     logging.basicConfig(level=logging.ERROR)
     fire.Fire(api_connect)
 
