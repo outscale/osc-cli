@@ -757,6 +757,7 @@ def api_connect(
     password: Optional[str] = None,
     authentication_method: Optional[str] = None,
     bash_completion: bool = False,
+    version: bool = False,
     **kwargs: CallParameters,
 ):
 
