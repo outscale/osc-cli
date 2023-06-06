@@ -588,6 +588,12 @@ class IcuCall(JsonApiCall):
         if not isinstance(data, dict):
             raise RuntimeError("Parameters lists are not supported")
 
+        if "AuthenticationMethod" in data:
+            self.authentication_method = data["AuthenticationMethod"]
+            if "Login" in data:
+                self.login = data["Login"]
+            if "Password" in data:
+                self.password = data["Password"]
         # Specific to ICU
         if (
             self.authentication_method == "accesskey"
