@@ -764,6 +764,7 @@ def api_connect(
     authentication_method: Optional[str] = None,
     bash_completion: bool = False,
     version: bool = False,
+    config_path: Optional[str] = None,
     **kwargs: CallParameters,
 ):
 
@@ -776,6 +777,14 @@ def api_connect(
         "lbu": LbuCall,
         "okms": OKMSCall,
     }
+
+    if config_path is not None:
+        global CONF_PATHS
+        path = Path(config_path)
+        if path.exists() is False:
+            print("cannot find ", path, " use default path")
+        else:
+            CONF_PATHS = [path]
 
     handler = calls[service](
         profile,
