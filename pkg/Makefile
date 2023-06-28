@@ -12,8 +12,8 @@ $(PY_TARGET):
 osc-cli.AppDir/done: $(PY_TARGET)
 	./$(PY_TARGET) --appimage-extract
 	mv squashfs-root osc-cli.AppDir
-	rm osc-cli.AppDir/usr/bin/python3.9
-	cd osc-cli.AppDir/usr/bin/ && ln -s ../../opt/python3.9/bin/python3.9 python3.9
+	rm osc-cli.AppDir/usr/bin/python$(PY_VER)
+	cd osc-cli.AppDir/usr/bin/ && ln -s ../../opt/$(PY_STR)/bin/$(PY_STR) $(PY_STR)
 	cp linux/AppRun-py osc-cli.AppDir/AppRun-py
 	cd .. && APPDIR=$${PWD}/pkg/osc-cli.AppDir/ ./pkg/osc-cli.AppDir/AppRun-py ./setup.py install --prefix=./pkg/osc-cli.AppDir/opt/$(PY_STR)/ --optimize=1
 	cd osc-cli.AppDir/ && \

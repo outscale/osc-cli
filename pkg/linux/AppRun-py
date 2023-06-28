@@ -12,4 +12,4 @@ export TKPATH="${TK_LIBRARY}"
 export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
 
 # Call Python
-"$APPDIR/opt/python3.9/bin/python3.9" "$@"
+"$APPDIR/opt/python3.11/bin/python3.11" "$@"
