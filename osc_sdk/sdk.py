@@ -506,6 +506,15 @@ class JsonApiCall(ApiCall):
 
         return json.loads(http_response.text)
 
+    def build_basic_auth(self) -> Dict[str, str]:
+        if self.authentication_method == "password":
+            creds = f"{self.login}:{self.password}"
+            basic_auth = "Basic {}".format(
+                base64.urlsafe_b64encode(creds.encode("utf-8")).decode("utf-8")
+            )
+            return {"Authorization": basic_auth}
+        return {}
+
     def build_headers(self, target: str, json_parameters: str) -> Headers:
         if self.date is None:
             raise RuntimeError("Date has nos been set up")
@@ -521,6 +530,7 @@ class JsonApiCall(ApiCall):
             "User-agent": USER_AGENT,
             "content-length": str(len(json_parameters)),
         }
+        headers.update(self.build_basic_auth())
         return signed_headers, canonical_headers, headers
 
     def make_request(self, call: str, **kwargs: CallParameters):
@@ -684,15 +694,6 @@ class OSCCall(JsonApiCall):
 
     def get_password_params(self) -> PasswordParams:
         # Don't put any auth parameters in body
-        return {}
-
-    def build_basic_auth(self) -> Dict[str, str]:
-        if self.authentication_method == "password":
-            creds = f"{self.login}:{self.password}"
-            basic_auth = "Basic {}".format(
-                base64.urlsafe_b64encode(creds.encode("utf-8")).decode("utf-8")
-            )
-            return {"Authorization": basic_auth}
         return {}
 
     def build_headers(self, target: str, _) -> Headers:
