@@ -25,6 +25,9 @@ jobs:
       run: |
         cd pkg && make osc-cli-x86_64.AppImage
         ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
+        cd pkg && make clean
+        cd pkg && make ./configure --py3_ver=11 --arch_old=2014 && make osc-cli-x86_64.AppImage
+        ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
