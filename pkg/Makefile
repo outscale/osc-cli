@@ -14,6 +14,8 @@ osc-cli.AppDir/done: $(PY_TARGET)
 	mv squashfs-root osc-cli.AppDir
 	rm osc-cli.AppDir/usr/bin/python$(PY_VER)
 	cd osc-cli.AppDir/usr/bin/ && ln -s ../../opt/$(PY_STR)/bin/$(PY_STR) $(PY_STR)
+	echo 'export PY_VERSION=$(PY_VER)' > osc-cli.AppDir/py_version.sh
+	echo 'export PY_STR=$(PY_STR)' >> osc-cli.AppDir/py_version.sh
 	cp linux/AppRun-py osc-cli.AppDir/AppRun-py
 	cd .. && APPDIR=$${PWD}/pkg/osc-cli.AppDir/ ./pkg/osc-cli.AppDir/AppRun-py ./setup.py install --prefix=./pkg/osc-cli.AppDir/opt/$(PY_STR)/ --optimize=1
 	cd osc-cli.AppDir/ && \
@@ -22,8 +24,6 @@ osc-cli.AppDir/done: $(PY_TARGET)
 	; done
 	rm osc-cli.AppDir/$(PY_STR).$(PY_MIN).desktop
 	cp linux/osc-cli.desktop osc-cli.AppDir/
-	echo 'export PY_VERSION=$(PY_VER)' > osc-cli.AppDir/py_version.sh
-	echo 'export PY_STR=$(PY_STR)' >> osc-cli.AppDir/py_version.sh
 	rm osc-cli.AppDir/AppRun
 	cp linux/AppRun osc-cli.AppDir/
 	chmod +x osc-cli.AppDir/AppRun
