@@ -17,7 +17,7 @@ help:
 
 .PHONY: package
 package:
-	cd pkg && ./configure --wget-json-search && make
+	cd pkg && ./configure --wget-json-search --py3_ver=11 --arch_old=2014 && make
 
 .PHONY: test
 test: clean test-pre-commit test-pylint test-bandit test-mypy test-int test-pytest build
