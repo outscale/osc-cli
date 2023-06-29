@@ -1,5 +1,11 @@
 #! /bin/bash
 
+self="$(readlink -f -- $0)"
+here="${self%/*}"
+APPDIR="${APPDIR:-${here}}"
+
+source "${APPDIR}/py_version.sh"
+
 # Resolve the calling command (preserving symbolic links).
 export APPIMAGE_COMMAND="$(command -v -- $ARGV0)"
 
@@ -12,4 +18,4 @@ export TKPATH="${TK_LIBRARY}"
 export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
 
 # Call Python
-"$APPDIR/opt/python3.11/bin/python3.11" "$@"
+"$APPDIR/opt/$PY_STR/bin/$PY_STR" "$@"
