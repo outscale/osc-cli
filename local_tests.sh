@@ -14,6 +14,8 @@ export OSC_TEST_ENDPOINT_FCU="http://127.0.0.1:3000"
 export OSC_TEST_ENDPOINT_API="http://127.0.0.1:3000"
 export OSC_TEST_REGION="vp-ware-3"
 
+export OSC_TEST_USING_RICOCHET="oui"
+
 if [ "$#" -eq 0 ]; then
 
     if [ ! -d "osc-ricochet-2" ]; then

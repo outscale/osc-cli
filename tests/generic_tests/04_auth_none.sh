@@ -58,10 +58,10 @@ $c icu $ENDPOINT_CLI_ARG ReadPublicCatalog &> /dev/null || { echo "icu:ReadPubli
 $c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=accesskey &> /dev/null || { echo "fcu:DescribeRegions error 1"; exit 1; }
 # On FCU $ENDPOINT_CLI_ARG, this kind call should not work with password authentication.
 
-# Thoses tests are remove because it's not clear that they have to fail: ReadRegions work with bad auth
-# but not describe regions, this is incoherent, and it's not osc-cli job to tests API incoherances
-#$c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null && { echo "fcu:DescribeRegions error 2"; exit 1; }
-#$c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=password --login "BAD_LOGIN" --password "BAD_PASSWORD" &> /dev/null && { echo "fcu:DescribeRegions error 3"; exit 1; }
+if [ -z "$OSC_TEST_USING_RICOCHET" ]; then
+    $c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=password --login "$OSC_TEST_LOGIN" --password "$OSC_TEST_PASSWORD" &> /dev/null && { echo "fcu:DescribeRegions error 2"; exit 1; }
+    $c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=password --login "BAD_LOGIN" --password "BAD_PASSWORD" &> /dev/null && { echo "fcu:DescribeRegions error 3"; exit 1; }
+fi
 
 # Bad auth method should still be refused by cli
 $c fcu $ENDPOINT_CLI_ARG DescribeRegions --authentication-method=bad &> /dev/null && { echo "fcu:DescribeRegions error 4"; exit 1; }
