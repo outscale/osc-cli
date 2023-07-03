@@ -1,0 +1,60 @@
+name: Pull Request Local Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  tests-packaging:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v3.0.0
+    - name: setup fuse
+      run: |
+        sudo apt-get update --fix-missing
+        sudo apt-get install -y -f -o Acquire::Retries=3 libfuse2
+    - name: Package bdist
+      run: make build
+    - name: Package AppImage
+      run: |
+        cd pkg && make osc-cli-x86_64.AppImage
+        ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: osc-cli
+        path: |
+          dist/osc_sdk-*.whl
+          dist/osc-sdk-*.tar.gz
+          pkg/osc-cli-x86_64.AppImage
+          pkg/osc-cli-x86_64.zip
+  tests-app:
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pre-commit/action@v2.0.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.version }}
+    - name: Install dependencies
+      run: make .venv/ok
+    - name: Analysing the code with pylint
+      run: make test-pylint
+    - name: Security check - Bandit
+      run: make test-bandit
+    - name: Test typing - mypy
+      run: make test-mypy
+    - name: Test pytest
+      run: ./local_tests.sh
+    - name: Test python package building
+      run: make build
