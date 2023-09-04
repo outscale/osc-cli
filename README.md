@@ -6,6 +6,12 @@ Official Outscale CLI providing connectors to Outscale API.
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
+## Maintenance mode !
+
+This project is now in maintenance mode, we will still fix bugs here, but no new features will be work on.
+If you want new features, you should use [oapi-cli](https://github.com/outscale/oapi-cli),
+which support all of oapi-cli, and have some syntax suggar to ease complex argument manipulation in comparaison to osc-cli usage.
+
 ## Getting Started
 
 
