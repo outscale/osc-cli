@@ -10,7 +10,7 @@ Official Outscale CLI providing connectors to Outscale API.
 
 This project is now in maintenance mode, we will still fix bugs here, but no new features will be work on.
 If you want new features, you should use [oapi-cli](https://github.com/outscale/oapi-cli),
-which support all of oapi-cli, and have some syntax suggar to ease complex argument manipulation in comparaison to osc-cli usage.
+which support all of osc-api, and have some syntax suggar to ease complex argument manipulation in comparaison to osc-cli usage.
 
 ## Getting Started
 
