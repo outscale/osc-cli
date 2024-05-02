@@ -721,7 +721,7 @@ def patch_conf(conf: Configuration, endpoint: Optional[str] = None) -> Configura
     return conf
 
 
-def get_conf(profile: str) -> Configuration:
+def get_conf(profile: str, service: str) -> Configuration:
     # Check which conf_path is used.
     conf_path = next((path for path in CONF_PATHS if path.exists()), None)
 
@@ -739,6 +739,29 @@ def get_conf(profile: str) -> Configuration:
                 json_profile["host"] = DEFAULT_HOST
             if "https" not in json_profile:
                 json_profile["https"] = True
+
+            if "endpoints" in json_profile:
+                if service == "api" and "api" in json_profile["endpoints"]:
+                    json_profile["endpoint"] = json_profile["endpoints"]["api"]
+                    del json_profile["endpoints"]
+                elif (
+                    service == "directlink"
+                    and "directlink" in json_profile["endpoints"]
+                ):
+                    json_profile["endpoint"] = json_profile["endpoints"]["directlink"]
+                    del json_profile["endpoints"]
+                elif service == "eim" and "eim" in json_profile["endpoints"]:
+                    json_profile["endpoint"] = json_profile["endpoints"]["eim"]
+                    del json_profile["endpoints"]
+                elif service == "fcu" and "fcu" in json_profile["endpoints"]:
+                    json_profile["endpoint"] = json_profile["endpoints"]["fcu"]
+                    del json_profile["endpoints"]
+                elif service == "lbu" and "lbu" in json_profile["endpoints"]:
+                    json_profile["endpoint"] = json_profile["endpoints"]["lbu"]
+                    del json_profile["endpoints"]
+                elif service == "okms" and "okms" in json_profile["endpoints"]:
+                    json_profile["endpoint"] = json_profile["endpoints"]["okms"]
+                    del json_profile["endpoints"]
 
             if "region_name" not in json_profile:
                 json_profile["region_name"] = json_profile["region"]
@@ -790,7 +813,7 @@ def api_connect(
         login,
         PASSWORD_ARG,
         authentication_method,
-        **patch_conf(get_conf(profile), endpoint),
+        **patch_conf(get_conf(profile, service), endpoint),
     )
 
     handler.make_request(call, **kwargs)
