@@ -2,15 +2,15 @@ name: Package Application with Pyinstaller on Mingw64
 
 on:
   push:
-    branches: [ master ]
+    branches: [main, master]
   pull_request:
-    branches: [ master ]
+    branches: [main, master]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
 
     - uses: msys2/setup-msys2@v2
       with:

@@ -2,8 +2,7 @@ name: Pull Request Tests
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [main, master]
 
 permissions:
   pull-requests: write
@@ -13,7 +12,7 @@ jobs:
   tests-packaging:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
     - uses: pre-commit/action@v3.0.0
     - name: setup fuse
       run: |
@@ -43,7 +42,7 @@ jobs:
         python-version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
     - uses: pre-commit/action@v2.0.3
     - name: Set up Python
       uses: actions/setup-python@v2

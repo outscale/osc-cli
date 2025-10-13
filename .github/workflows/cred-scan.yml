@@ -2,14 +2,17 @@ name: Credential Scanner
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main, master ]
+
+permissions:
+  contents: read
 
 jobs:
   cred-scan:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
     - name: Scan credentials
-      uses: outscale-dev/cred-scan@main
+      uses: outscale/cred-scan@main
       with:
         scan_path: "./"
