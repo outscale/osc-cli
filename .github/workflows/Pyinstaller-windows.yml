@@ -33,7 +33,7 @@ jobs:
         zip -r osc-cli-x86_64.zip pkg/osc-cli
         ./pkg/osc-cli/osc-cli.exe api ReadRegions | grep api.eu-west-2.outscale.com
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v5
       if: ${{ github.event_name != 'push' }}
       with:
         name: osc-cli-win

@@ -1,4 +1,13 @@
+import os
+
 from setuptools import find_packages, setup
+
+
+def get_long_description():
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(root_path, "README.md"), "r", encoding="utf-8") as fd:
+        return fd.read()
+
 
 setup(
     name="osc-sdk",
@@ -7,7 +16,7 @@ setup(
     author="Outscale SAS",
     author_email="contact@outscale.com",
     description="Outscale API SDK and CLI",
-    long_description=open("README.md").read(),
+    long_description=get_long_description(),
     long_description_content_type="text/markdown",
     include_package_data=True,
     license="BSD",
@@ -20,6 +29,8 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent",
     ],
     url="https://github.com/outscale/osc-cli",

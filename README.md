@@ -10,7 +10,7 @@
 
 Official command-line interface for the OUTSCALE API.
 
-> **Maintenance mode**: bug fixes only; no new features.  
+> **Maintenance mode**: bug fixes only; no new features.
 > Looking for new features and an improved UX? See **[oapi-cli](https://github.com/outscale/oapi-cli)**.
 
 ## Quick start
