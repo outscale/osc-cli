@@ -31,7 +31,7 @@ osc-cli.AppDir/done: $(PY_TARGET)
 
 
 appimagetool-x86_64.AppImage:
-	wget https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+	wget https://github.com/AppImage/appimagetool/releases/download/1.9.0/appimagetool-x86_64.AppImage
 	chmod +x appimagetool-x86_64.AppImage
 
 osc-cli-x86_64.AppImage:  osc-cli.AppDir/done appimagetool-x86_64.AppImage

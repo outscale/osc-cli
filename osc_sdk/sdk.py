@@ -16,7 +16,7 @@ import defusedxml.ElementTree as ET
 import fire
 import requests
 import xmltodict
-from requests.models import Request, Response
+from requests.models import Response
 from typing_extensions import TypedDict
 
 CANONICAL_URI = "/"
@@ -141,8 +141,8 @@ class OscApiException(Exception):
         return (
             f"Error --> status = {self.status_code}, "
             f"code = {self.error_code}, "
-            f'{"code_type = " if self.code_type is not None else ""}'
-            f'{self.code_type + ", " if self.code_type is not None else ""}'
+            f"{'code_type = ' if self.code_type is not None else ''}"
+            f"{self.code_type + ', ' if self.code_type is not None else ''}"
             f"Reason = {self.message}, "
             f"request_id = {self.request_id}"
         )
@@ -389,7 +389,7 @@ class ApiCall:
                 "content-type": self.CONTENT_TYPE,
                 "host": self.host,
                 "x-amz-date": self.date,
-                "x-amz-target": f'{self.API_NAME}_{datetime.date.today().strftime("%Y%m%d")}.{call}',
+                "x-amz-target": f"{self.API_NAME}_{datetime.date.today().strftime('%Y%m%d')}.{call}",
             }
 
             payload_hash = hashlib.sha256(
@@ -521,7 +521,7 @@ class JsonApiCall(ApiCall):
 
         signed_headers = "host;x-amz-date;x-amz-target"
         canonical_headers = (
-            f"host:{self.host}\n" f"x-amz-date:{self.date}\n" f"x-amz-target:{target}\n"
+            f"host:{self.host}\nx-amz-date:{self.date}\nx-amz-target:{target}\n"
         )
         headers = {
             "content-type": self.CONTENT_TYPE,
@@ -607,7 +607,7 @@ class IcuCall(JsonApiCall):
         # Specific to ICU
         if (
             self.authentication_method == "accesskey"
-            or self.authentication_method == None
+            or self.authentication_method is None
         ):
             data.update({"AuthenticationMethod": "accesskey"})
 
@@ -702,7 +702,7 @@ class OSCCall(JsonApiCall):
 
         signed_headers = "host;x-osc-date;x-osc-target"
         canonical_headers = (
-            f"host:{self.host}\n" f"x-osc-date:{self.date}\n" f"x-osc-target:{target}\n"
+            f"host:{self.host}\nx-osc-date:{self.date}\nx-osc-target:{target}\n"
         )
         headers = {
             "Content-Type": self.CONTENT_TYPE,
@@ -733,15 +733,14 @@ def get_conf(profile: str) -> Configuration:
     for v in json_profiles:
         json_profile = json_profiles[v]
         if "region" in json_profile:
-
             # use default stuffs only when "region" is use
             # to keep region_name format retrocompatible
-            if not "host" in json_profile and not "endpoint" in json_profile:
+            if "host" not in json_profile and "endpoint" not in json_profile:
                 json_profile["host"] = DEFAULT_HOST
-            if not "https" in json_profile:
+            if "https" not in json_profile:
                 json_profile["https"] = True
 
-            if not "region_name" in json_profile:
+            if "region_name" not in json_profile:
                 json_profile["region_name"] = json_profile["region"]
             del json_profile["region"]
     conf = cast(Mapping[str, Configuration], json_profiles)
@@ -768,7 +767,6 @@ def api_connect(
     config_path: Optional[str] = None,
     **kwargs: CallParameters,
 ):
-
     calls = {
         "api": OSCCall,
         "directlink": DirectLinkCall,
@@ -811,10 +809,9 @@ def main():
                 global PASSWORD_ARG
                 PASSWORD_ARG = argv[i + 1]
             elif a == "--bash_completion":
-                f = open(BASH_COMPLETION_PATH, "r")
-                print(f.read())
+                with open(BASH_COMPLETION_PATH, "r") as f:
+                    print(f.read())
                 sys.exit()
-                return 0
             elif a == "--version":
                 print(SDK_VERSION)
                 return 0

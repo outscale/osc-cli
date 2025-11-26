@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v5
-    - uses: pre-commit/action@v3.0.0
+    - uses: pre-commit/action@v3.0.1
     - name: setup fuse
       run: |
         sudo apt-get update --fix-missing
-        sudo apt-get install -y -f -o Acquire::Retries=3 libfuse2
+        sudo apt-get install -y -f -o Acquire::Retries=3 libfuse2 desktop-file-utils
     - name: Package bdist
       run: make build
     - name: Package AppImage
@@ -25,7 +25,7 @@ jobs:
         cd pkg && make osc-cli-x86_64.AppImage
         ./osc-cli-x86_64.AppImage 2>&1 | grep Usage
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v5
       with:
         name: osc-cli
         path: |
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
-    - uses: pre-commit/action@v2.0.3
+    - uses: pre-commit/action@v3.0.1
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
