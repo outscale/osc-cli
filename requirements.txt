@@ -11,7 +11,7 @@ isort==7.0.0
 markdown-it-py==4.0.0
 mccabe==0.7.0
 mdurl==0.1.2
-mypy==1.18.2
+mypy==1.19.0
 mypy-extensions==1.1.0
 packaging==25.0
 pathspec==0.12.1
