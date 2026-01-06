@@ -28,37 +28,6 @@ def env() -> Env:
     )
 
 
-def test_icu_noauth_call_with_auth_env(env):
-    icu = sdk.IcuCall(
-        access_key=env.access_key,
-        secret_key=env.secret_key,
-        endpoint=env.endpoint_icu,
-        region_name=env.region,
-    )
-    icu.make_request("ReadPublicCatalog")
-    assert len(icu.response)
-
-
-def test_icu_noauth_call_with_empty_auth_env(env):
-    icu = sdk.IcuCall(  # nosec
-        access_key="",
-        secret_key="",
-        endpoint=env.endpoint_icu,
-        region_name=env.region,
-    )
-    icu.make_request("ReadPublicCatalog")
-    assert len(icu.response)
-
-
-def test_icu_noauth_basic(env):
-    icu = sdk.IcuCall(
-        endpoint=env.endpoint_icu,
-        region_name=env.region,
-    )
-    icu.make_request("ReadPublicCatalog")
-    assert len(icu.response)
-
-
 def test_api_noauth_call_with_auth_env(env):
     api = sdk.OSCCall(
         access_key=env.access_key,

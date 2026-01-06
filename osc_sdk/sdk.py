@@ -19,6 +19,8 @@ import xmltodict
 from requests.models import Response
 from typing_extensions import TypedDict
 
+from .problem import api_error
+
 CANONICAL_URI = "/"
 CONFIGURATION_FILE = "config.json"
 CONFIGURATION_FOLDER = ".osc"
@@ -119,77 +121,6 @@ class ResponseContent(Dict):
 class Tag(TypedDict):
     Name: str
     Values: List[str]
-
-
-@dataclass
-class OscApiException(Exception):
-    http_response: InitVar[Response]
-
-    status_code: int = field(init=False)
-    error_code: Optional[str] = field(default=None, init=False)
-    message: Optional[str] = field(default=None, init=False)
-    code_type: Optional[str] = field(default=None, init=False)
-    request_id: Optional[str] = field(default=None, init=False)
-
-    def __post_init__(self, http_response: Response):
-        super().__init__()
-        self.status_code = http_response.status_code
-        # Set error details
-        self._set(http_response)
-
-    def __str__(self) -> str:
-        return (
-            f"Error --> status = {self.status_code}, "
-            f"code = {self.error_code}, "
-            f"{'code_type = ' if self.code_type is not None else ''}"
-            f"{self.code_type + ', ' if self.code_type is not None else ''}"
-            f"Reason = {self.message}, "
-            f"request_id = {self.request_id}"
-        )
-
-    def _set(self, http_response: Response):
-        content = http_response.content.decode()
-        # In case it is JSON error format
-        try:
-            error = json.loads(content)
-        except json.JSONDecodeError:
-            pass
-        else:
-            if "__type" in error:
-                self.error_code = error.get("__type")
-                self.message = error.get("message")
-                self.request_id = http_response.headers.get("x-amz-requestid")
-            else:
-                self.request_id = (error.get("ResponseContext") or {}).get("RequestId")
-                errors = error.get("Errors")
-                if errors:
-                    error = errors[0]
-                    self.error_code = error.get("Code")
-                    self.message = error.get("Type")
-                    if error.get("Details"):
-                        self.code_type = self.message
-                        self.message = error.get("Details")
-                    else:
-                        self.code_type = None
-            return
-
-        # In case it is XML format
-        try:
-            error = ET.fromstring(content)
-        except ET.ParseError:
-            return
-        else:
-            for key, attr in [
-                ("Code", "error_code"),
-                ("Message", "message"),
-                ("RequestId", "request_id"),
-                ("RequestID", "request_id"),
-            ]:
-                value = next(
-                    (x.text for x in error.iter() if x.tag.endswith(key)), None
-                )
-                if value:
-                    setattr(self, attr, value)
 
 
 @dataclass
@@ -437,7 +368,7 @@ class ApiCall:
 class XmlApiCall(ApiCall):
     def get_response(self, http_response: Response) -> Union[str, ResponseContent]:
         if http_response.status_code not in SUCCESS_CODES:
-            raise OscApiException(http_response)
+            raise api_error(http_response)
         try:
             return cast(ResponseContent, xmltodict.parse(http_response.content))
         except Exception:
@@ -502,7 +433,7 @@ class JsonApiCall(ApiCall):
 
     def get_response(self, http_response: Response) -> ResponseContent:
         if http_response.status_code not in SUCCESS_CODES:
-            raise OscApiException(http_response)
+            raise api_error(http_response)
 
         return json.loads(http_response.text)
 
@@ -641,7 +572,7 @@ class DirectLinkCall(JsonApiCall):
 
     def get_response(self, http_response: Response) -> ResponseContent:
         if http_response.status_code not in SUCCESS_CODES:
-            raise OscApiException(http_response)
+            raise api_error(http_response)
 
         res = json.loads(http_response.text)
         res["requestid"] = http_response.headers["x-amz-requestid"]
