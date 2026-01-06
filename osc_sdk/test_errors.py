@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import pytest
 
 from . import sdk
+from .problem import LegacyProblem
 
 
 @dataclass
@@ -32,6 +33,6 @@ def test_bad_filter(env):
         endpoint=env.endpoint_api,
         region_name=env.region,
     )
-    with pytest.raises(sdk.OscApiException) as e:
+    with pytest.raises(LegacyProblem) as e:
         oapi.make_request("ReadImages", Filters='"bad_filter"')
-    assert e.value.status_code == 400
+    assert e.value.status == "400"

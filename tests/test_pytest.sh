@@ -30,5 +30,5 @@ fi
 PROJECT_ROOT=$(cd "$(dirname $0)/.." && pwd)
 cd $PROJECT_ROOT
 . .venv/bin/activate
-pytest osc_sdk &> /dev/null
+pytest osc_sdk
 echo "OK"
