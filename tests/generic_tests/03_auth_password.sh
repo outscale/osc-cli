@@ -5,7 +5,7 @@ source common_functions.sh
 # Assuming you are running this from a prepared virtual environment
 PROJECT_ROOT=$(cd "$(dirname $0)/../.." && pwd)
 cd $PROJECT_ROOT
-c="python osc_sdk/sdk.py"
+c="python -m osc_sdk.sdk"
 
 echo -n "$(basename $0): "
 

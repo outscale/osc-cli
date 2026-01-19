@@ -11,41 +11,20 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v5
-
-    - uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64
-        install: >-
-          git
-          base-devel
-          zip
-        pacboy:
-          openssl
-          python-pip
+        submodules: true
 
-    - shell: msys2 {0}
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+
+    - name: build and package
       run: |
-        git submodule update --init
         python --version
         python -m pip install pyinstaller
         python -m pip install .
-        pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py --add-data /mingw64/bin/libcrypto-3-x64.dll:. --add-data /mingw64/bin/libssl-3-x64.dll:.
-        zip -r osc-cli-x86_64.zip pkg/osc-cli
+        pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
+
+    - name: smoke test
+      run: |
         ./pkg/osc-cli/osc-cli.exe api ReadRegions | grep api.eu-west-2.outscale.com
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v5
-      if: ${{ github.event_name != 'push' }}
-      with:
-        name: osc-cli-win
-        path: |
-          osc-cli-x86_64.zip
-    - name: upload nightly
-      uses: "marvinpinto/action-automatic-releases@latest"
-      if: ${{ github.event_name == 'push' }}
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: true
-        automatic_release_tag: "nightly-windows"
-        title: "Windows Development Build"
-        files: |
-          osc-cli-x86_64.zip

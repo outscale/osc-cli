@@ -3,8 +3,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from . import sdk
-from .problem import LegacyProblem
+from . import LegacyProblem, sdk
 
 
 @dataclass
