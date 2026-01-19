@@ -24,7 +24,15 @@ jobs:
         python -m pip install pyinstaller
         python -m pip install .
         pyinstaller --distpath ./pkg --clean --name osc-cli osc_sdk/sdk.py
+        Compress-Archive -Path pkg/osc-cli -DestinationPath osc-cli-x86_64.zip
 
     - name: smoke test
       run: |
         ./pkg/osc-cli/osc-cli.exe api ReadRegions | grep api.eu-west-2.outscale.com
+
+    - name: Upload artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: osc-cli-win64
+        path: osc-cli-x86_64.zip
