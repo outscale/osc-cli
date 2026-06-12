@@ -1,4 +1,4 @@
-[![Project Graduated](https://docs.outscale.com/fr/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
+[![Project Stage](https://docs.outscale.com/fr/userguide/_images/Project-Archived-red.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![](https://dcbadge.limes.pink/api/server/HUVtY5gT6s?style=flat&theme=default-inverted)](https://discord.gg/HUVtY5gT6s)
 
@@ -8,10 +8,11 @@
 
 # Outscale CLI (osc-cli)
 
-Official command-line interface for the OUTSCALE API.
-
-> **Maintenance mode**: bug fixes only; no new features.
-> Looking for new features and an improved UX? See **[oapi-cli](https://github.com/outscale/oapi-cli)**.
+> [!WARNING]
+> 
+> `osc-cli` is deprecated and is no longer actively maintained.
+>
+> We recommend using [`octl`](https://github.com/outscale/octl) instead. `octl` is our latest CLI project and is actively maintained.
 
 ## Quick start
 
